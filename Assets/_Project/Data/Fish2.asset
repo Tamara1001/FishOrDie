@@ -12,8 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae02968f817348c41a565cae0a99fbb2, type: 3}
   m_Name: Fish2
   m_EditorClassIdentifier: Assembly-CSharp::FishData
-  fishName: Fish2
-  fishSprite: {fileID: 21300000, guid: 2be4787bde6aecc4f93f20c4f7ffb3f0, type: 3}
-  scoreValue: 15
+  fishName: Vieja del Agua
+  fishSprite: {fileID: 21300000, guid: 0dadf01aeb138ec4d8d28743ab8c678c, type: 3}
   catchDifficulty: 0.5
-  weight: 5
+  minSizeCm: 30
+  maxSizeCm: 60
+  minWeightKg: 2
+  maxWeightKg: 5
+  valuePerKg: 8

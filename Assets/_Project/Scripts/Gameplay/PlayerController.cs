@@ -18,8 +18,12 @@ public class PlayerController : MonoBehaviour
     [Header("UI & Feedback")]
     [SerializeField] private SpriteRenderer _playerVisualRenderer; // SPRITE DEL JUGADOR (HIJO)
     [SerializeField] private SpriteRenderer _feedbackSpriteRenderer;
+    [SerializeField] private SpriteRenderer _feedbackOutlineRenderer; // OUTLINE DEL FEEDBACK
     [SerializeField] private Sprite _caughtSprite;
     [SerializeField] private Sprite _lostSprite;
+    [SerializeField] private Transform _popupSpawnPoint;
+
+    public Transform PopupSpawnPoint => _popupSpawnPoint != null ? _popupSpawnPoint : transform;
 
     // -------------------------------------------------------------------------
     // Eventos
@@ -146,6 +150,14 @@ public class PlayerController : MonoBehaviour
         _feedbackSpriteRenderer.sprite = sprite;
         _feedbackSpriteRenderer.gameObject.SetActive(true);
         
+        Color targetColor = (sprite == _caughtSprite) ? Color.green : Color.red;
+
+        if (_feedbackOutlineRenderer != null)
+        {
+            _feedbackOutlineRenderer.sprite = sprite;
+            _feedbackOutlineRenderer.gameObject.SetActive(true);
+        }
+        
         float duration = 1.2f;
         float elapsed = 0f;
         Vector3 startPos = Vector3.up * 0.8f; // Arriba del jugador
@@ -156,17 +168,32 @@ public class PlayerController : MonoBehaviour
             float t = elapsed / duration;
             
             // Sube suavemente
-            _feedbackSpriteRenderer.transform.localPosition = startPos + Vector3.up * (t * 1f);
+            Vector3 currentPos = startPos + Vector3.up * (t * 1f);
+            _feedbackSpriteRenderer.transform.localPosition = currentPos;
+            
+            if (_feedbackOutlineRenderer != null)
+                _feedbackOutlineRenderer.transform.localPosition = currentPos;
             
             // Fade out en la segunda mitad
-            Color c = Color.white;
-            if (t > 0.5f) c.a = 1f - ((t - 0.5f) * 2f);
-            _feedbackSpriteRenderer.color = c;
+            float alpha = 1f;
+            if (t > 0.5f) alpha = 1f - ((t - 0.5f) * 2f);
+            
+            // Aplicamos los colores intercambiados
+            Color mainColor = PlayerColor;
+            mainColor.a = alpha;
+            _feedbackSpriteRenderer.color = mainColor;
+
+            if (_feedbackOutlineRenderer != null)
+            {
+                targetColor.a = alpha;
+                _feedbackOutlineRenderer.color = targetColor;
+            }
             
             yield return null;
         }
         
         _feedbackSpriteRenderer.gameObject.SetActive(false);
+        if (_feedbackOutlineRenderer != null) _feedbackOutlineRenderer.gameObject.SetActive(false);
     }
 
     // -------------------------------------------------------------------------

@@ -4,8 +4,9 @@ using UnityEngine;
 
 public class RoundHUD : MonoBehaviour
 {
-    [Header("Timer")]
+    [Header("Top HUD")]
     [SerializeField] private TMP_Text _timerLabel;
+    [SerializeField] private TMP_Text _roundLabel;
 
     [Header("Player Slots")]
     [SerializeField] private GameObject _playerSlotPrefab;
@@ -25,23 +26,34 @@ public class RoundHUD : MonoBehaviour
     // -------------------------------------------------------------------------
     private void OnEnable()
     {
-        RoundManager.OnTimerTick       += HandleTimerTick;
+        RoundManager.OnTimerTick += HandleTimerTick;
+        RoundManager.OnScoreAdded += HandleScoreAdded;
         RoundManager.OnPlayerEliminated += HandlePlayerEliminated;
-        RoundManager.OnScoreAdded      += HandleScoreAdded;
-        RoundManager.OnRoundReset      += HandleRoundReset;
+        RoundManager.OnRoundReset += HandleRoundReset;
+        RoundManager.OnFishCatchDetails += HandleFishCatchDetails;
     }
 
     private void OnDisable()
     {
-        RoundManager.OnTimerTick       -= HandleTimerTick;
+        RoundManager.OnTimerTick -= HandleTimerTick;
+        RoundManager.OnScoreAdded -= HandleScoreAdded;
         RoundManager.OnPlayerEliminated -= HandlePlayerEliminated;
-        RoundManager.OnScoreAdded      -= HandleScoreAdded;
-        RoundManager.OnRoundReset      -= HandleRoundReset;
+        RoundManager.OnRoundReset -= HandleRoundReset;
+        RoundManager.OnFishCatchDetails -= HandleFishCatchDetails;
     }
 
     private void Start()
     {
         BuildSlots();
+        UpdateRoundLabel();
+    }
+
+    private void UpdateRoundLabel()
+    {
+        if (_roundLabel != null)
+        {
+            _roundLabel.text = $"RONDA {RoundManager.CurrentRoundNumber}";
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -80,6 +92,12 @@ public class RoundHUD : MonoBehaviour
     // -------------------------------------------------------------------------
     // Event Handlers
     // -------------------------------------------------------------------------
+    private void HandleFishCatchDetails(PlayerController player, string fishName, int size, int weight, int score)
+    {
+        PlayerHUDSlot slot = _slots.Find(s => s.Player == player);
+        slot?.ShowCatchBanner(fishName, size, weight, score);
+    }
+
     private void HandleTimerTick(float remaining)
     {
         if (_timerLabel == null) return;
@@ -93,23 +111,20 @@ public class RoundHUD : MonoBehaviour
         PlayerHUDSlot slot = _slots.Find(s => s.Player == player);
         slot?.RefreshScore();
 
-        if (_scorePopupPrefab == null || slot == null) return;
+        if (_scorePopupPrefab == null || player == null) return;
 
-        // Instanciamos el popup como hijo del slot (UI)
-        GameObject popup = Instantiate(_scorePopupPrefab, slot.transform);
-        
-        // Lo levantamos un poquito desde el centro del slot
-        if (popup.TryGetComponent(out RectTransform rt))
-        {
-            rt.anchoredPosition = new Vector2(0f, 50f); 
-        }
-        else
-        {
-            popup.transform.localPosition = new Vector3(0f, 50f, 0f);
-        }
+        // Calculamos la posición en el mundo 3D/2D
+        Vector3 worldPos = player.PopupSpawnPoint != player.transform 
+            ? player.PopupSpawnPoint.position 
+            : player.transform.position + Vector3.up * 1.5f;
+
+        // Lo instanciamos TOTALMENTE SUELTO en el mundo real (sin parent)
+        GameObject popup = Instantiate(_scorePopupPrefab, worldPos, Quaternion.identity);
 
         if (popup.TryGetComponent(out ScorePopup scorePopup))
+        {
             scorePopup.Initialize(delta, player.PlayerColor);
+        }
     }
 
     private void HandlePlayerEliminated(PlayerController player)
@@ -120,7 +135,10 @@ public class RoundHUD : MonoBehaviour
 
     private void HandleRoundReset()
     {
+        UpdateRoundLabel();
         foreach (PlayerHUDSlot slot in _slots)
+        {
             slot.RefreshScore();
+        }
     }
 }

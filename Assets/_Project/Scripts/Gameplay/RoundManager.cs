@@ -23,12 +23,15 @@ public class RoundManager : MonoBehaviour
     public static event Action<float> OnTimerTick;
     public static event Action<PlayerController> OnPlayerEliminated;
     public static event Action<PlayerController, int> OnScoreAdded;
+    public static event Action<PlayerController, string, int, int, int> OnFishCatchDetails;
     public static event Action OnRoundReset;
     public static event Action<PlayerController> OnVictoryEvent;
 
     // -------------------------------------------------------------------------
     // Internal State
     // -------------------------------------------------------------------------
+    public static int CurrentRoundNumber { get; private set; } = 1;
+
     private readonly List<PlayerController> _activePlayers = new();
     private float _timeRemaining;
     private bool _roundActive = false;
@@ -42,6 +45,7 @@ public class RoundManager : MonoBehaviour
     // ocurre entre OnEnable y Start.
     private void Awake()
     {
+        CurrentRoundNumber = 1;
         GameManager.OnStateChanged += OnGameStateChanged;
     }
 
@@ -150,8 +154,15 @@ public class RoundManager : MonoBehaviour
             Debug.LogWarning("[RoundManager] No se encontró un perdedor. ¿Lista de jugadores vacía?");
         }
 
-        // Momento de tensión visual
+        // Momento de tensión visual (mostrar quién fue devorado)
         yield return new WaitForSeconds(3f);
+
+        // Fade a negro antes de cambiar la pantalla
+        if (UI_ScreenFader.Instance != null)
+        {
+            UI_ScreenFader.Instance.FadeTo(1f, 0.5f);
+            yield return new WaitForSeconds(0.5f);
+        }
 
         if (_activePlayers.Count <= 1)
         {
@@ -159,7 +170,14 @@ public class RoundManager : MonoBehaviour
         }
         else
         {
+            CurrentRoundNumber++;
             ResetAndStartNextRound();
+        }
+
+        // Fade a transparente cuando ya estemos en la nueva ronda o pantalla de victoria
+        if (UI_ScreenFader.Instance != null)
+        {
+            UI_ScreenFader.Instance.FadeTo(0f, 0.5f);
         }
     }
 
@@ -231,12 +249,29 @@ public class RoundManager : MonoBehaviour
 
     private void OnFishCaught(PlayerController player, FishData fish)
     {
-        int scoreToAdd   = fish != null ? fish.scoreValue : 1;
-        string fishName  = fish != null ? fish.fishName   : "Pez desconocido";
+        if (fish == null) return;
+
+        // --- Generación procedural de stats del pez ---
+        int size = UnityEngine.Random.Range(fish.minSizeCm, fish.maxSizeCm + 1);
+        
+        // Regla de 3 para sacar el peso proporcional al tamaño
+        float t = Mathf.InverseLerp(fish.minSizeCm, fish.maxSizeCm, size);
+        int weight = Mathf.RoundToInt(Mathf.Lerp(fish.minWeightKg, fish.maxWeightKg, t));
+        
+        // Multiplicador de dinero
+        int scoreToAdd = weight * fish.valuePerKg;
+        // Evitar que valga 0 por si es muy chiquito
+        if (scoreToAdd <= 0) scoreToAdd = 1;
+
+        string fishName = fish.fishName;
 
         player.AddScore(scoreToAdd);
         OnScoreAdded?.Invoke(player, scoreToAdd);
-        Debug.Log($"[RoundManager] {player.gameObject.name} pescó un {fishName}! (+{scoreToAdd})");
+        
+        // Disparar cartel detallado para que lo agarre la UI
+        OnFishCatchDetails?.Invoke(player, fishName, size, weight, scoreToAdd);
+
+        Debug.Log($"[RoundManager] {player.gameObject.name} pescó: {fishName} | {size}cm | {weight}kg | +${scoreToAdd}");
     }
 
     // -------------------------------------------------------------------------

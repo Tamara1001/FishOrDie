@@ -94,7 +94,19 @@ public class GameManager : MonoBehaviour
 
     public void StartNewGame()
     {
+        StartCoroutine(StartNewGameRoutine());
+    }
+
+    private System.Collections.IEnumerator StartNewGameRoutine()
+    {
         Time.timeScale = 1f;
+
+        if (UI_ScreenFader.Instance != null)
+        {
+            UI_ScreenFader.Instance.FadeTo(1f, 0.5f);
+            yield return new WaitForSecondsRealtime(0.5f);
+        }
+
         _pendingRestart = true;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
@@ -121,9 +133,25 @@ public class GameManager : MonoBehaviour
 
     public void ReturnToMainMenu()
     {
+        StartCoroutine(ReturnToMenuRoutine());
+    }
+
+    private System.Collections.IEnumerator ReturnToMenuRoutine()
+    {
+        if (UI_ScreenFader.Instance != null)
+        {
+            UI_ScreenFader.Instance.FadeTo(1f, 0.5f);
+            yield return new WaitForSecondsRealtime(0.5f);
+        }
+
         _sessionTimer = 0f;
         Time.timeScale = 1f;
         ChangeState(GameState.MainMenu);
+        
+        if (UI_ScreenFader.Instance != null)
+        {
+            UI_ScreenFader.Instance.FadeTo(0f, 0.5f);
+        }
     }
 
     public float SessionTime => _sessionTimer;

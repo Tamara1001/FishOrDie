@@ -9,6 +9,8 @@ public class PlayerHUDSlot : MonoBehaviour
     [SerializeField] private TMP_Text _scoreLabel;
     [SerializeField] private Image _background;
     [SerializeField] private GameObject _eliminatedIcon;
+    [SerializeField] private TMP_Text _catchBannerText;
+    [SerializeField] private CanvasGroup _catchBannerGroup;
 
     [Header("Skill Check")]
     [Tooltip("Opcional. Si se asigna, se inicializa junto con el slot.")]
@@ -95,5 +97,62 @@ public class PlayerHUDSlot : MonoBehaviour
         }
 
         iconTransform.localScale = Vector3.one;
+    }
+
+    private Coroutine _catchBannerRoutine;
+    
+    public void ShowCatchBanner(string fishName, int size, int weight, int score)
+    {
+        if (_catchBannerText == null) return;
+        
+        if (_catchBannerRoutine != null) StopCoroutine(_catchBannerRoutine);
+        _catchBannerRoutine = StartCoroutine(CatchBannerRoutine(fishName, size, weight, score));
+    }
+
+    private System.Collections.IEnumerator CatchBannerRoutine(string fishName, int size, int weight, int score)
+    {
+        _catchBannerText.text = $"{fishName}\n{size}cm - {weight}kg\n<color=#FFD700>+${score}</color>";
+        
+        // Manejamos el fade usando CanvasGroup si está asignado, sino solo el texto
+        if (_catchBannerGroup != null)
+        {
+            _catchBannerGroup.gameObject.SetActive(true);
+            _catchBannerGroup.alpha = 1f;
+        }
+        else
+        {
+            _catchBannerText.gameObject.SetActive(true);
+            Color baseColor = _catchBannerText.color;
+            baseColor.a = 1f;
+            _catchBannerText.color = baseColor;
+        }
+        
+        float duration = 5f;
+        float elapsed = 0f;
+        
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            
+            if (elapsed > 4f)
+            {
+                float alpha = 1f - (elapsed - 4f);
+                if (_catchBannerGroup != null)
+                {
+                    _catchBannerGroup.alpha = alpha;
+                }
+                else
+                {
+                    Color c = _catchBannerText.color;
+                    c.a = alpha;
+                    _catchBannerText.color = c;
+                }
+            }
+            
+            yield return null;
+        }
+        
+        if (_catchBannerGroup != null) _catchBannerGroup.gameObject.SetActive(false);
+        else _catchBannerText.gameObject.SetActive(false);
     }
 }

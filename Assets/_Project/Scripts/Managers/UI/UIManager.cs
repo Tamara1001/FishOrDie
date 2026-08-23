@@ -39,7 +39,7 @@ public class UIManager : MonoBehaviour
         if (winner != null)
         {
             string colorHex = ColorUtility.ToHtmlStringRGB(winner.PlayerColor);
-            _victoryText.text = $"¡<color=#{colorHex}>{winner.gameObject.name}</color>\nSOBREVIVIÓ AL PARANÁ!";
+            _victoryText.text = $"¡<color=#{colorHex}>{winner.PlayerName}</color>\nSOBREVIVIÓ AL PARANÁ!";
         }
         else
         {

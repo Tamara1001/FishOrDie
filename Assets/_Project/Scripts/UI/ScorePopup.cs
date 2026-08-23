@@ -10,24 +10,28 @@ public class ScorePopup : MonoBehaviour
 
     public void Initialize(int delta, Color color)
     {
-        _label.text  = $"+{delta}";
-        _label.color = color;
+        string colorHex = ColorUtility.ToHtmlStringRGB(color);
+        
+        // Usamos el color base brillante y evitamos tags experimentales que puedan romper el texto
+        _label.text  = $"<color=#{colorHex}>+{delta}</color>";
+        
         StartCoroutine(AnimateAndDestroy());
     }
 
-    private IEnumerator AnimateAndDestroy()
+    private System.Collections.IEnumerator AnimateAndDestroy()
     {
-        float elapsed    = 0f;
-        Color startColor = _label.color;
+        float elapsed = 0f;
 
         while (elapsed < _lifetime)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / _lifetime;
 
+            // Movimiento
             transform.position += Vector3.up * _floatSpeed * Time.deltaTime;
-            startColor.a        = 1f - t;
-            _label.color        = startColor;
+
+            // Fade out
+            _label.alpha = 1f - t;
 
             yield return null;
         }

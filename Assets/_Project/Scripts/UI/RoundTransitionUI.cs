@@ -49,6 +49,6 @@ public class RoundTransitionUI : MonoBehaviour
         string colorHex = ColorUtility.ToHtmlStringRGB(loser.PlayerColor);
         
         // Mensaje con el nombre del jugador en su color
-        _eliminationMessage.text = $"¡<color=#{colorHex}>{loser.gameObject.name}</color>\nFUE DEVORADO!";
+        _eliminationMessage.text = $"¡<color=#{colorHex}>{loser.PlayerName}</color>\nFUE DEVORADO!";
     }
 }

@@ -4,18 +4,25 @@ using UnityEngine;
 public class FishData : ScriptableObject
 {
     [Header("Identity")]
-    public string fishName = "Unnamed Fish";
+    public string fishName = "Pez Genérico";
     public Sprite fishSprite;
 
-    [Header("Gameplay")]
-    [Min(1)]
-    public int scoreValue = 10;
-
+    [Header("Gameplay (Skill Check)")]
     [Range(0f, 1f)]
-    [Tooltip("0 = trivial, 1 = nearly impossible. Drives the Skill Check parameters.")]
+    [Tooltip("0 = muy fácil, 1 = casi imposible")]
     public float catchDifficulty = 0.5f;
 
-    [Header("Flavor")]
-    [Min(0.1f)]
-    public float weight = 1f;
+    [Header("Fish Stats (Generación)")]
+    [Tooltip("Tamaño mínimo en CM")]
+    public int minSizeCm = 15;
+    [Tooltip("Tamaño máximo en CM")]
+    public int maxSizeCm = 50;
+
+    [Tooltip("Peso mínimo en KG")]
+    public int minWeightKg = 1;
+    [Tooltip("Peso máximo en KG")]
+    public int maxWeightKg = 5;
+
+    [Tooltip("Precio (Score) por Kg de este pez")]
+    public int valuePerKg = 10;
 }

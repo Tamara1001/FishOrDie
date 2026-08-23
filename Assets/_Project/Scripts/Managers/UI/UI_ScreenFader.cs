@@ -14,11 +14,12 @@ public class UI_ScreenFader : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        // Nos aseguramos de que arranque transparente y sin bloquear clics
+        // Arrancar con la pantalla en negro y hacer un fade in automático al cargar la escena
         if (fadeGroup != null)
         {
-            fadeGroup.alpha = 0f;
-            fadeGroup.blocksRaycasts = false;
+            fadeGroup.alpha = 1f;
+            fadeGroup.blocksRaycasts = true;
+            FadeTo(0f, 1f); // Tarda 1 segundo en revelar la pantalla
         }
     }
 
@@ -40,7 +41,7 @@ public class UI_ScreenFader : MonoBehaviour
 
         while (time < duration)
         {
-            time += Time.deltaTime;
+            time += Time.unscaledDeltaTime;
             fadeGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, time / duration);
             yield return null;
         }
