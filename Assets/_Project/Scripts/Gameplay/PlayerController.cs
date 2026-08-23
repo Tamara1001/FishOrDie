@@ -12,6 +12,7 @@ public class PlayerController : MonoBehaviour
     public string BindingPath { get; private set; }
     public int CurrentScore { get; private set; }
     public Color PlayerColor { get; private set; }
+    public bool IsFacingLeft { get; private set; }
 
     public SkillCheck CurrentSkillCheck { get; private set; }
 
@@ -24,8 +25,14 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform _popupSpawnPoint;
     
     [Header("Boya / Línea de Pesca")]
+    [Tooltip("El visual principal de la boya (para hacerla temblar durante la pesca)")]
+    [SerializeField] private Transform _bobberVisual;
     [Tooltip("Objeto visual que salta o aparece cuando el pez muerde (Ej: signo !)")]
     [SerializeField] private GameObject _bobberAlertObject;
+
+    [Header("Posicionamiento Relativo (Espejado)")]
+    [Tooltip("Objetos que deben moverse al lado opuesto cuando el jugador mira a la izquierda (Ej: Hilo, Boya, Alerta, Canvas del SkillCheck). Esto invierte su Posición X local sin rotarlos ni deformarlos.")]
+    [SerializeField] private Transform[] _flipOffsets;
 
     public Transform PopupSpawnPoint => _popupSpawnPoint != null ? _popupSpawnPoint : transform;
 
@@ -61,6 +68,7 @@ public class PlayerController : MonoBehaviour
         PlayerName  = playerName;
         BindingPath = bindingPath;
         PlayerColor = color;
+        IsFacingLeft = faceLeft;
         
         // Crear un AudioSource local dinámicamente para ruidos que se deben cortar (Ej: la caña)
         _localAudioSource = gameObject.AddComponent<AudioSource>();
@@ -86,6 +94,25 @@ public class PlayerController : MonoBehaviour
         else
         {
             Debug.LogWarning($"[PlayerController] {_playerVisualRenderer} no está asignado en {gameObject.name}");
+        }
+
+        // Si el jugador debe mirar a la izquierda, invertimos la Posición X de los objetos asimétricos
+        if (faceLeft && _flipOffsets != null)
+        {
+            foreach (Transform t in _flipOffsets)
+            {
+                if (t != null)
+                {
+                    Vector3 localPos = t.localPosition;
+                    localPos.x = -localPos.x;
+                    t.localPosition = localPos;
+                }
+            }
+        }
+
+        if (_bobberVisual != null)
+        {
+            _baseBobberPos = _bobberVisual.localPosition;
         }
 
         gameObject.name = $"Player_{id + 1}";
@@ -151,6 +178,18 @@ public class PlayerController : MonoBehaviour
                     0f
                 );
             }
+            
+            // Hacer vibrar a la boya de forma similar (o más frenética)
+            if (_bobberVisual != null)
+            {
+                float shakeForce = _fishAction.IsPressed() ? 0.08f : 0.02f;
+                _bobberVisual.localPosition = _baseBobberPos + new Vector3(
+                    UnityEngine.Random.Range(-shakeForce, shakeForce),
+                    UnityEngine.Random.Range(-shakeForce, shakeForce),
+                    0f
+                );
+            }
+
             return;
         }
         else
@@ -159,6 +198,11 @@ public class PlayerController : MonoBehaviour
             if (_playerVisualRenderer != null && gameObject.activeSelf && _squashRoutine == null)
             {
                 _playerVisualRenderer.transform.localPosition = Vector3.Lerp(_playerVisualRenderer.transform.localPosition, Vector3.zero, Time.deltaTime * 10f);
+            }
+            
+            if (_bobberVisual != null && gameObject.activeSelf)
+            {
+                _bobberVisual.localPosition = Vector3.Lerp(_bobberVisual.localPosition, _baseBobberPos, Time.deltaTime * 10f);
             }
         }
 
@@ -170,6 +214,7 @@ public class PlayerController : MonoBehaviour
     }
 
     private Vector3 _baseVisualScale = Vector3.one;
+    private Vector3 _baseBobberPos = Vector3.zero;
     private bool _hasSavedBaseScale = false;
 
     private Coroutine _squashRoutine;

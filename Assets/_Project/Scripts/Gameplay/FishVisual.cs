@@ -7,19 +7,24 @@ public class FishVisual : MonoBehaviour
     
     private float _speed;
     private Vector3 _direction;
+    private PlayerController _targetPlayer;
     private float _targetX;
     private float _catchRadius = 2.0f; // Qué tan cerca del target sube a la superficie
     
     private SpriteRenderer _sr;
     private Vector3 _baseScale;
 
+    private bool _hasPaused = false;
+    private float _pauseTimer = 0f;
+
     // Se llama desde el spawner al nacer
-    public void Initialize(FishData data, float speed, Vector3 direction, float targetX)
+    public void Initialize(FishData data, float speed, Vector3 direction, PlayerController targetPlayer)
     {
         Data = data;
         _speed = speed;
         _direction = direction;
-        _targetX = targetX;
+        _targetPlayer = targetPlayer;
+        _targetX = targetPlayer != null ? targetPlayer.transform.position.x : 0f;
 
         _sr = GetComponent<SpriteRenderer>();
         _baseScale = transform.localScale;
@@ -67,6 +72,35 @@ public class FishVisual : MonoBehaviour
 
     private void Update()
     {
+        // Actualizar el target dinámicamente por si el jugador se mueve (aunque aquí no se mueva)
+        if (_targetPlayer != null) _targetX = _targetPlayer.transform.position.x;
+
+        float dist = Mathf.Abs(transform.position.x - _targetX);
+
+        // --- LÓGICA DE PAUSA BAJO LA BOYA ---
+        if (!_hasPaused && dist < 0.1f) // Justo en el centro del jugador
+        {
+            if (_pauseTimer == 0f && _targetPlayer != null)
+            {
+                // Primer frame de pausa: ¡Avisar a la boya!
+                _targetPlayer.TriggerBobberAlert();
+            }
+
+            _pauseTimer += Time.deltaTime;
+            if (_pauseTimer < 0.5f)
+            {
+                // Mantenemos la lógica visual de "superficie" mientras está pausado
+                IsCatchable = true;
+                UpdateVisualDepth(0f); // 0f = Superficie total
+                return; // Cortamos el update para que no avance de posición
+            }
+            else
+            {
+                _hasPaused = true;
+            }
+        }
+
+        // Movimiento normal
         transform.position += _direction * _speed * Time.deltaTime;
 
         if (Mathf.Abs(transform.position.x) > 20f)
@@ -76,20 +110,22 @@ public class FishVisual : MonoBehaviour
         }
 
         // --- LÓGICA DE PROFUNDIDAD ---
-        float dist = Mathf.Abs(transform.position.x - _targetX);
         IsCatchable = dist <= _catchRadius;
+        
+        // depthFactor: 0 = Superficie, 1 = Profundidad
+        float transitionRange = 1.5f; 
+        float depthFactor = Mathf.Clamp01((dist - _catchRadius) / transitionRange); 
 
+        UpdateVisualDepth(depthFactor);
+    }
+
+    private void UpdateVisualDepth(float depthFactor)
+    {
         if (_sr != null)
         {
-            // depthFactor: 0 = Superficie, 1 = Profundidad
-            float transitionRange = 1.5f; 
-            float depthFactor = Mathf.Clamp01((dist - _catchRadius) / transitionRange); 
-
-            // Efecto Visual: Color (Oscuro/Azulado en el fondo, Normal en la superficie)
             Color deepColor = new Color(0.2f, 0.3f, 0.45f, 0.6f);
             _sr.color = Color.Lerp(Color.white, deepColor, depthFactor);
             
-            // Efecto Visual: Escala (Más chico en el fondo)
             float scaleMult = Mathf.Lerp(1f, 0.6f, depthFactor);
             transform.localScale = _baseScale * scaleMult;
         }

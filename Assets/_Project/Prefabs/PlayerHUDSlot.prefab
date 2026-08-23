@@ -902,6 +902,9 @@ MonoBehaviour:
   _catchBannerText: {fileID: 7185590050633625740}
   _catchBannerGroup: {fileID: 5981501108496981758}
   _skillCheckPanel: {fileID: 7711451040679373215}
+  _flipOffsets:
+  - {fileID: 8077590812642649270}
+  - {fileID: 1433459446213786260}
 --- !u!1 &4585126511358354688
 GameObject:
   m_ObjectHideFlags: 0
@@ -1299,7 +1302,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 125, y: -150}
+  m_AnchoredPosition: {x: 120, y: -150}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!225 &1364155707063488213

@@ -73,11 +73,11 @@ public class RiverSpawner : MonoBehaviour
             FishData randomFish = _currentPool[Random.Range(0, _currentPool.Length)];
             
             // Elegir un jugador objetivo al azar para que el pez salga a la superficie frente a él
-            float targetX = 0f;
+            PlayerController targetPlayer = null;
             if (_activePlayers != null && _activePlayers.Count > 0)
             {
                 int rndIndex = Random.Range(0, _activePlayers.Count);
-                targetX = _activePlayers[rndIndex].transform.position.x;
+                targetPlayer = _activePlayers[rndIndex];
             }
             
             // 50% chance de salir de izquierda a derecha, 50% de derecha a izquierda
@@ -94,7 +94,7 @@ public class RiverSpawner : MonoBehaviour
                 float speed = Random.Range(2f, 5f);
                 Vector3 dir = fromLeft ? Vector3.right : Vector3.left;
                 
-                visual.Initialize(randomFish, speed, dir, targetX);
+                visual.Initialize(randomFish, speed, dir, targetPlayer);
                 ActiveFishes.Add(visual);
             }
         }

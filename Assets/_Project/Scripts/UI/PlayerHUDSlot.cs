@@ -16,6 +16,10 @@ public class PlayerHUDSlot : MonoBehaviour
     [Tooltip("Opcional. Si se asigna, se inicializa junto con el slot.")]
     [SerializeField] private SkillCheckPanel _skillCheckPanel;
 
+    [Header("Posicionamiento Relativo (Espejado UI)")]
+    [Tooltip("Elementos UI (RectTransform) que deben cambiar de lado (invertir X) si el jugador mira a la izquierda. Sirve para centrar el SkillCheck o la caja de puntos.")]
+    [SerializeField] private RectTransform[] _flipOffsets;
+
     public PlayerController Player { get; private set; }
 
     public void Initialize(PlayerController player)
@@ -42,6 +46,20 @@ public class PlayerHUDSlot : MonoBehaviour
         _eliminatedIcon?.SetActive(false);
 
         _skillCheckPanel?.Initialize(player);
+
+        // Si el jugador está del lado derecho y mira hacia la izquierda, espejamos las posiciones de la UI.
+        if (player.IsFacingLeft && _flipOffsets != null)
+        {
+            foreach (RectTransform rt in _flipOffsets)
+            {
+                if (rt != null)
+                {
+                    Vector2 pos = rt.anchoredPosition;
+                    pos.x = -pos.x;
+                    rt.anchoredPosition = pos;
+                }
+            }
+        }
     }
 
     private int _displayedScore = 0;
