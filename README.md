@@ -102,13 +102,22 @@ Controla el flujo de los peces usando Corrutinas. Lee los porcentajes de rareza 
 
 ## ⌨️ 6. Input System y Configuración
 
-### Solución de Hardware (Anti-Ghosting)
-Para que 6 personas puedan jugar en un mismo teclado sin sufrir bloqueos físicos del hardware (*Keyboard Ghosting*), se implementó el **New Input System** de Unity.
+### 6.1. Solución de Hardware (Anti-Ghosting)
+Para que hasta 6 personas puedan jugar en un mismo teclado sin sufrir bloqueos físicos del hardware (*Keyboard Ghosting*), se implementó el **New Input System** de Unity.
 * El juego permite remapeo total interactivo (Re-binding) desde el menú de opciones utilizando `PerformInteractiveRebinding()`.
 * Los jugadores pueden asignar teclas extendidas (Numpad, F13-F24, botones de Stream Deck o Gamepads auxiliares).
+* Incorpora validación de colisiones: el sistema bloquea y rechaza un cambio de tecla si otro jugador activo ya la está utilizando, emitiendo un feedback visual y sonoro inmediato.
 
-### Persistencia (`MatchSettings`)
-Las opciones de la partida no viajan entre escenas colgando de GameObjects pesados. Se estructuró un script estático `MatchSettings` respaldado por `PlayerPrefs`. Guarda: Cantidad de jugadores, Nombres, Colores y el *Binding Path* (Ruta de la tecla) elegido. El `PlayerSpawner` lee esta clase estática al iniciar la ronda para configurar los personajes dinámicamente.
+### 6.2. Lobby "Drop-In" (Experiencia Arcade)
+Pensado para eventos presenciales, el juego implementa una sala de espera intermedia de integración continua (*Drop-In/Drop-Out*).
+* **Unión Dinámica (Press-to-Join):** No es necesario configurar cuántas personas jugarán. Cualquier espectador puede presionar una tecla física y el sistema detectará el evento, encenderá una ranura vacía, le asignará la tecla presionada (nombrando al jugador automáticamente, ej. "Jugador SPACE") e instanciará su perfil en memoria.
+* **Auto-Color Inteligente:** Al integrarse un jugador, el Lobby escanea una paleta global predefinida (Arcoíris) y le asigna instantáneamente el primer color que no esté siendo utilizado por los demás, garantizando siempre la distinción visual.
+* **Desplazamiento Compacto (Array Shifting):** Si un jugador abandona la sala (Kick), el sistema aplica un corrimiento matricial hacia la izquierda. Cierra el hueco vacío traspasando los perfiles de los jugadores contiguos y manteniendo el empaquetado visual y de datos en perfecto orden secuencial.
+
+### 6.3. Persistencia Centralizada (`MatchSettings`)
+Las opciones de la partida no viajan entre escenas colgando de GameObjects pesados. Se estructuró una clase estática `MatchSettings` respaldada por `PlayerPrefs`.
+* Alimenta de forma bidireccional tanto al Menú de Ajustes tradicional (para configurar "por defecto") como al Lobby dinámico, manteniendo los cambios sincronizados en disco al cerrar cualquiera de los paneles.
+* Guarda: Estado de Actividad (`bool[] PlayerActive`), Nombres, Colores y el *Binding Path* (Ruta de la tecla) elegido. El `PlayerSpawner` lee estos arreglos para configurar los personajes dinámicamente y calcular un espaciado equitativo en la pantalla dependiendo de cuántos jugadores existan realmente en la partida.
 
 ---
 
@@ -121,8 +130,29 @@ Los datos de los peces están encapsulados en `FishData` (Scriptable Objects). E
 
 ---
 
-## 🚀 9. Guía para Desarrolladores (Puesta en Marcha)
+## 🎵 9. Arquitectura de Audio (Game Feel Sonoro)
 
-1. **Dependencias:** Unity 2022 LTS (o superior) y el paquete *Input System* (v1.7+).
-2. **Escena de Entrada:** Para correr el juego completo, abrí `Scenes/MainMenu`. Esto inicializa el `MatchSettings` y carga los periféricos.
-3. **Pruebas Rápidas:** El código está fortificado. Si le das *Play* directamente en la escena `Scenes/Gameplay`, el juego detectará la falta del `GameManager` y autogenerará un flujo estándar seguro para que puedas debugear mecánicas de pesca sin pasar por el menú cada vez.
+El proyecto cuenta con un sistema de sonido altamente pulido y centralizado a través de un `AudioManager` (Singleton).
+
+### 9.1. Sistema de Stems (Música Dinámica)
+Para evitar cortes abruptos y generar tensión, el juego utiliza **Stems** (pistas de audio sincronizadas):
+* Al inicio de la partida, el AudioManager reproduce dos archivos de audio idénticos en duración y tempo: un **Stem Base** (Música) al 100% de volumen, y un **Stem de Tensión** (Percusión rápida) al 0%.
+* Cuando quedan pocos segundos de ronda, el `RoundManager` emite una señal. El `AudioManager` aplica un interpolado matemático (`Mathf.Lerp`) para subir el volumen de la Tensión al 100%, generando un clímax orgánico y matemáticamente sincronizado sin interrumpir la canción.
+
+### 9.2. Variabilidad de Tono (Pitch Randomization por Object Pooling)
+La fatiga auditiva es un riesgo en juegos de ritmo rápido.
+* Si el diseñador tilda la opción **"Randomize Pitch"** en el Inspector de un SFX (ej. el salpicón del agua), el AudioManager **no** reproduce ese sonido en su canal global principal. 
+* En su lugar, el sistema solicita prestado un reproductor temporal de un **Object Pool** interno pre-instanciado. Modifica su pitch aleatoriamente (ej. entre 0.85 y 1.15) y lo devuelve a la cola al terminar. Esto asegura variabilidad orgánica sin degradar el rendimiento (cero instanciaciones en tiempo real) y sin pisar el pitch de otros sonidos superpuestos.
+
+### 9.3. Enrutamiento del AudioMixer y Control Local
+* Toda la señal del AudioManager desemboca en un **AudioMixer** nativo de Unity (Master, Music, SFX) conectado directamente a los ajustes de usuario (vía `PlayerPrefs`).
+* **Canales Independientes (Ambiente):** El sonido del río corre en un reproductor de loop infinito segregado pero enrutado dinámicamente al canal de `Music`, para que escale con las preferencias musicales.
+* **Audio Localizado:** Para sonidos de estado (ej: el reel de la caña de pescar), el `PlayerController` inyecta automáticamente en sí mismo un componente `AudioSource` en Runtime. Este componente "pide prestado" el clip al AudioManager y lo manipula localmente, permitiendo cortarlo de manera exacta si el jugador suelta el botón.
+
+---
+
+## 🚀 10. Guía para Desarrolladores (Puesta en Marcha)
+
+1. **Versión de Unity:** El proyecto está desarrollado utilizando **Unity 6.3** y el paquete *Input System* (v1.7+).
+2. **Escena Única:** Todo el flujo del proyecto (Menú, Transiciones, Gameplay) ocurre dentro de una única escena llamada `FishOrDie`. Abrí esta escena para testear o compilar el proyecto completo. 
+3. **Máquina de Estados (FSM):** No es necesario cargar múltiples escenas. El `GameManager` se encarga de habilitar y deshabilitar los paneles de Interfaz y los Spawners correspondientes de forma centralizada y segura.

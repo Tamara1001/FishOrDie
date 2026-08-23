@@ -11,17 +11,15 @@ public class UI_PlayerConfigSlot : MonoBehaviour
     [SerializeField] private Button _colorButton;
     [SerializeField] private Button _keyButton;
     [SerializeField] private TMP_Text _keyText;
+    
+    [Tooltip("Opcional: Imagen que muestra al jugador (ej: sprite de un gato) para teñirlo del color elegido.")]
+    [SerializeField] private Image _playerPreviewImage;
 
     private int _playerIndex;
     private int _currentColorIndex = 0;
     private InputAction _tempAction;
-
-    // Paleta de colores para iterar cuando se hace clic en el color
-    private readonly Color[] _availableColors = { 
-        Color.cyan, Color.red, Color.yellow, Color.green, 
-        Color.magenta, Color.white, new Color(1f, 0.5f, 0f), 
-        new Color(0.5f, 0f, 1f), Color.blue 
-    };
+    
+    public System.Action OnSlotStateChanged;
 
     public void Initialize(int index)
     {
@@ -29,11 +27,13 @@ public class UI_PlayerConfigSlot : MonoBehaviour
         
         // Cargar datos actuales de MatchSettings
         _nameInput.text = MatchSettings.PlayerNames[index];
+        
         _colorImage.color = MatchSettings.PlayerColors[index];
+        if (_playerPreviewImage != null) _playerPreviewImage.color = MatchSettings.PlayerColors[index];
         UpdateKeyText(MatchSettings.PlayerBindings[index]);
 
         // Asegurarnos de que el índice de color coincida más o menos (o arrancar desde el 0 de la paleta)
-        _currentColorIndex = index % _availableColors.Length;
+        _currentColorIndex = index % MatchSettings.AvailableColors.Length;
 
         // Limpiar y asignar listeners
         _nameInput.onValueChanged.RemoveAllListeners();
@@ -53,12 +53,26 @@ public class UI_PlayerConfigSlot : MonoBehaviour
 
     private void CycleColor()
     {
-        _currentColorIndex = (_currentColorIndex + 1) % _availableColors.Length;
-        Color newColor = _availableColors[_currentColorIndex];
+        _currentColorIndex = (_currentColorIndex + 1) % MatchSettings.AvailableColors.Length;
+        Color newColor = MatchSettings.AvailableColors[_currentColorIndex];
         
         _colorImage.color = newColor;
+        if (_playerPreviewImage != null) _playerPreviewImage.color = newColor;
+        
         MatchSettings.PlayerColors[_playerIndex] = newColor;
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Click");
+    }
+
+    private InputActionRebindingExtensions.RebindingOperation _rebindOperation;
+
+    private void OnDisable()
+    {
+        _rebindOperation?.Cancel();
+        _rebindOperation?.Dispose();
+        _rebindOperation = null;
+
+        _tempAction?.Dispose();
+        _tempAction = null;
     }
 
     private void StartRebind()
@@ -69,32 +83,67 @@ public class UI_PlayerConfigSlot : MonoBehaviour
         
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Click");
 
+        // Cancelamos cualquier operación previa por seguridad
+        _rebindOperation?.Cancel();
+        _rebindOperation?.Dispose();
+
         // Creamos una acción temporal solo para escuchar la próxima tecla
         _tempAction = new InputAction(type: InputActionType.Button, binding: MatchSettings.PlayerBindings[_playerIndex]);
         
-        var rebindOperation = _tempAction.PerformInteractiveRebinding()
+        _rebindOperation = _tempAction.PerformInteractiveRebinding()
             .WithControlsExcluding("Mouse") // No permitimos clics del mouse como controles
             .OnMatchWaitForAnother(0.1f)
             .OnComplete(operation => {
                 string newBinding = operation.action.bindings[0].effectivePath;
-                MatchSettings.PlayerBindings[_playerIndex] = newBinding;
                 
-                UpdateKeyText(newBinding);
-                
-                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_InputBind");
+                // Verificar si la tecla ya está en uso por OTRO jugador activo
+                bool isDuplicate = false;
+                for (int k = 0; k < MatchSettings.MAX_PLAYERS; k++)
+                {
+                    if (k != _playerIndex && MatchSettings.PlayerActive[k] && MatchSettings.PlayerBindings[k].ToLower() == newBinding.ToLower())
+                    {
+                        isDuplicate = true;
+                        break;
+                    }
+                }
+
+                if (isDuplicate)
+                {
+                    // Rechazar el cambio de tecla
+                    if (this != null && gameObject != null && _keyButton != null)
+                    {
+                        UpdateKeyText(MatchSettings.PlayerBindings[_playerIndex]);
+                        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Cancel"); // Sonido de error
+                        _keyButton.interactable = true;
+                    }
+                }
+                else
+                {
+                    // Aceptar el cambio de tecla
+                    MatchSettings.PlayerBindings[_playerIndex] = newBinding;
+                    
+                    if (this != null && gameObject != null && _keyButton != null)
+                    {
+                        UpdateKeyText(newBinding);
+                        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_InputBind");
+                        _keyButton.interactable = true;
+                    }
+                }
                 
                 operation.Dispose();
-                _tempAction.Dispose();
-                _keyButton.interactable = true;
+                _tempAction?.Dispose();
             })
             .OnCancel(operation => {
-                UpdateKeyText(MatchSettings.PlayerBindings[_playerIndex]);
+                if (this != null && gameObject != null && _keyButton != null)
+                {
+                    UpdateKeyText(MatchSettings.PlayerBindings[_playerIndex]);
+                    _keyButton.interactable = true;
+                }
                 operation.Dispose();
-                _tempAction.Dispose();
-                _keyButton.interactable = true;
+                _tempAction?.Dispose();
             });
         
-        rebindOperation.Start();
+        _rebindOperation.Start();
     }
 
     private void UpdateKeyText(string bindingPath)
@@ -104,5 +153,18 @@ public class UI_PlayerConfigSlot : MonoBehaviour
             bindingPath, InputControlPath.HumanReadableStringOptions.OmitDevice);
             
         _keyText.text = cleanName.ToUpper();
+    }
+
+    /// <summary>
+    /// Llama a esta función desde un Botón (ej. una crucecita [X] en la UI del slot)
+    /// para quitar a este jugador de la partida.
+    /// </summary>
+    public void LeaveLobby()
+    {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Cancel");
+        
+        MatchSettings.RemovePlayerAndShift(_playerIndex);
+        
+        OnSlotStateChanged?.Invoke();
     }
 }

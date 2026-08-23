@@ -82,7 +82,7 @@ public class UI_OptionsMenu : MonoBehaviour
             _playerCountLabel.text = $"{count} JUGADORES";
     }
 
-    private void RefreshPlayerSlots()
+    public void RefreshPlayerSlots()
     {
         if (_playerSlots == null || _playerSlots.Length == 0) return;
 
@@ -90,11 +90,13 @@ public class UI_OptionsMenu : MonoBehaviour
         {
             if (_playerSlots[i] == null) continue;
 
-            bool isActive = i < MatchSettings.PlayerCount;
+            bool isActive = MatchSettings.PlayerActive[i];
             _playerSlots[i].gameObject.SetActive(isActive);
 
             if (isActive)
             {
+                // Hookup action para refrescar si se hace clic en LeaveLobby
+                _playerSlots[i].OnSlotStateChanged = RefreshPlayerSlots;
                 _playerSlots[i].Initialize(i);
             }
         }

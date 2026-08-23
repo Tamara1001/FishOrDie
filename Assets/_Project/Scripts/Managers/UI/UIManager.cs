@@ -13,6 +13,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject roundTransitionPanel;
 
     [Header("Overlay Panels")]
+    [SerializeField] private GameObject lobbyPanel;
     [SerializeField] private GameObject optionsPanel;
     [SerializeField] private GameObject creditsPanel;
     [SerializeField] private GameObject pausePanel;
@@ -126,6 +127,7 @@ public class UIManager : MonoBehaviour
 
     private void CloseAllOverlayPanels()
     {
+        lobbyPanel?.SetActive(false);
         optionsPanel?.SetActive(false);
         creditsPanel?.SetActive(false);
     }
@@ -135,7 +137,32 @@ public class UIManager : MonoBehaviour
     // -------------------------------------------------------------------------
     public void OnPlayClicked()
     {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Click");
+        // En lugar de iniciar el juego directo, abrimos el Lobby
+        lobbyPanel?.SetActive(true);
+    }
+    
+    public void OnCloseLobbyClicked()
+    {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Cancel");
+        MatchSettings.Save(); // Guarda si el jugador armó un lobby y se arrepintió, mantiene sincronía
+        lobbyPanel?.SetActive(false);
+    }
+    
+    public void OnLobbyStartGameClicked()
+    {
+        if (MatchSettings.GetActivePlayerCount() < 2)
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Cancel");
+            Debug.LogWarning("[Lobby] No puedes iniciar con menos de 2 jugadores.");
+            return; // Bloquea el inicio de la partida
+        }
+
+        // Sincronizar y guardar para que el Menú de Ajustes lo adopte como default
+        MatchSettings.Save();
+
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_StartGame");
+        lobbyPanel?.SetActive(false);
         GameManager.Instance.StartNewGame();
     }
     

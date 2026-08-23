@@ -295,19 +295,32 @@ public class RoundManager : MonoBehaviour
     // -------------------------------------------------------------------------
     private PlayerController FindLowestScoringPlayer()
     {
-        PlayerController loser = null;
+        if (_activePlayers == null || _activePlayers.Count == 0) return null;
 
+        int lowestScore = int.MaxValue;
+
+        // 1. Encontrar cuál es el puntaje más bajo de todos
         foreach (PlayerController player in _activePlayers)
         {
-            if (loser == null ||
-                player.CurrentScore < loser.CurrentScore ||
-               (player.CurrentScore == loser.CurrentScore && player.PlayerID > loser.PlayerID))
+            if (player.CurrentScore < lowestScore)
             {
-                loser = player;
+                lowestScore = player.CurrentScore;
             }
         }
 
-        return loser;
+        // 2. Agrupar a todos los jugadores que tengan ese puntaje (puede ser 1 o varios empatados)
+        List<PlayerController> tiedPlayers = new List<PlayerController>();
+        foreach (PlayerController player in _activePlayers)
+        {
+            if (player.CurrentScore == lowestScore)
+            {
+                tiedPlayers.Add(player);
+            }
+        }
+
+        // 3. Elegir al perdedor al azar entre los empatados
+        int randomIndex = UnityEngine.Random.Range(0, tiedPlayers.Count);
+        return tiedPlayers[randomIndex];
     }
 
     private void SubscribeToPlayers()

@@ -22,6 +22,10 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Sprite _caughtSprite;
     [SerializeField] private Sprite _lostSprite;
     [SerializeField] private Transform _popupSpawnPoint;
+    
+    [Header("Boya / Línea de Pesca")]
+    [Tooltip("Objeto visual que salta o aparece cuando el pez muerde (Ej: signo !)")]
+    [SerializeField] private GameObject _bobberAlertObject;
 
     public Transform PopupSpawnPoint => _popupSpawnPoint != null ? _popupSpawnPoint : transform;
 
@@ -387,5 +391,40 @@ public class PlayerController : MonoBehaviour
         }
 
         gameObject.SetActive(false);
+    }
+
+    // -------------------------------------------------------------------------
+    // Lógica de la Boya
+    // -------------------------------------------------------------------------
+    public void TriggerBobberAlert()
+    {
+        if (_bobberAlertObject != null && _bobberAlertObject.activeSelf == false)
+        {
+            StartCoroutine(BobberAlertRoutine());
+        }
+    }
+
+    private System.Collections.IEnumerator BobberAlertRoutine()
+    {
+        _bobberAlertObject.SetActive(true);
+        Vector3 origScale = _bobberAlertObject.transform.localScale;
+        
+        // Efecto "Pop"
+        _bobberAlertObject.transform.localScale = origScale * 1.5f;
+        
+        float t = 0;
+        while (t < 0.15f)
+        {
+            t += Time.deltaTime;
+            _bobberAlertObject.transform.localScale = Vector3.Lerp(origScale * 1.5f, origScale, t / 0.15f);
+            yield return null;
+        }
+        
+        _bobberAlertObject.transform.localScale = origScale;
+        
+        // El pez se queda pausado 0.5s en total, así que mostramos el signo ! un poquito y lo apagamos
+        yield return new WaitForSeconds(0.35f); 
+        
+        _bobberAlertObject.SetActive(false);
     }
 }

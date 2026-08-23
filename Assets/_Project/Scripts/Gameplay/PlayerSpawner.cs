@@ -38,23 +38,41 @@ public class PlayerSpawner : MonoBehaviour
             return;
         }
 
-        int count = MatchSettings.PlayerCount;
-        for (int i = 0; i < count; i++)
+        int totalActive = MatchSettings.GetActivePlayerCount();
+        
+        // Failsafe matemático: Si alguien carga la escena directo sin pasar por el menú (0 jugadores),
+        // forzamos al menos 2 jugadores para evitar que la división genere Coordenadas "NaN" (Invisibles).
+        if (totalActive < 2)
         {
-            Vector3 spawnPosition = CalculateSpawnPosition(i, count);
+            Debug.LogWarning("[PlayerSpawner] Se detectaron menos de 2 jugadores. Forzando 2 jugadores por defecto.");
+            MatchSettings.PlayerActive[0] = true;
+            MatchSettings.PlayerActive[1] = true;
+            totalActive = 2;
+        }
+
+        int activeIndex = 0; // Para el cálculo de layout
+
+        for (int i = 0; i < MatchSettings.MAX_PLAYERS; i++)
+        {
+            if (!MatchSettings.PlayerActive[i]) continue;
+
+            Vector3 spawnPosition = CalculateSpawnPosition(activeIndex, totalActive);
+            Debug.Log($"[PlayerSpawner] Spawn {i} (ActiveIndex {activeIndex}) at Position: {spawnPosition}");
             GameObject instance   = Instantiate(_playerPrefab, spawnPosition, Quaternion.identity);
 
             if (instance.TryGetComponent(out PlayerController controller))
             {
-                // Si está en la mitad derecha de la pantalla (index >= mitad), mira hacia la izquierda
-                bool faceLeft = i >= (count / 2f);
+                // Si está en la mitad derecha de la pantalla, mira hacia la izquierda
+                bool faceLeft = activeIndex >= (totalActive / 2f);
                 
                 controller.Initialize(i, MatchSettings.PlayerBindings[i], MatchSettings.PlayerColors[i], faceLeft, MatchSettings.PlayerNames[i]);
                 _spawnedPlayers.Add(controller);
             }
+
+            activeIndex++;
         }
 
-        Debug.Log($"[PlayerSpawner] {count} player(s) spawned from MatchSettings.");
+        Debug.Log($"[PlayerSpawner] {totalActive} player(s) spawned from MatchSettings.");
     }
 
     private Vector3 CalculateSpawnPosition(int index, int totalPlayers)
