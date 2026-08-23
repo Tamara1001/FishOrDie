@@ -15,6 +15,7 @@ public class RoundManager : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private PlayerSpawner _playerSpawner;
+    [SerializeField] private RiverSpawner _riverSpawner;
 
     // -------------------------------------------------------------------------
     // Events (static so la UI puede suscribirse sin referencia directa)
@@ -108,6 +109,9 @@ public class RoundManager : MonoBehaviour
         _timeRemaining = _roundDuration;
         _roundActive   = true;
 
+        if (_riverSpawner != null) 
+            _riverSpawner.StartSpawning(_fishPool, _activePlayers);
+
         Debug.Log($"[RoundManager] Ronda iniciada con {_activePlayers.Count} jugador(es).");
     }
 
@@ -115,6 +119,18 @@ public class RoundManager : MonoBehaviour
     {
         _roundActive = false;
         UnsubscribeFromPlayers();
+
+        // Forzar cancelación de cualquier pesca en curso
+        foreach (PlayerController p in _activePlayers)
+        {
+            if (p != null) p.CancelSkillCheck();
+        }
+        
+        if (_riverSpawner != null)
+        {
+            _riverSpawner.StopSpawning();
+        }
+
         StartCoroutine(RoundTransitionRoutine());
     }
 
@@ -152,6 +168,9 @@ public class RoundManager : MonoBehaviour
         foreach (PlayerController player in _activePlayers)
             player.ResetScore();
 
+        if (_riverSpawner != null)
+            _riverSpawner.ClearRiver();
+
         OnRoundReset?.Invoke();
         
         GameManager.Instance.ChangeState(GameManager.GameState.Playing);
@@ -176,11 +195,38 @@ public class RoundManager : MonoBehaviour
     // -------------------------------------------------------------------------
     private void OnFishAttempt(PlayerController player)
     {
-        FishData fish = (_fishPool != null && _fishPool.Length > 0)
-            ? _fishPool[UnityEngine.Random.Range(0, _fishPool.Length)]
-            : null;
+        if (_riverSpawner == null || _riverSpawner.ActiveFishes.Count == 0) return;
 
-        player.StartSkillCheck(fish);
+        FishVisual hookedFish = null;
+        float closestDist = float.MaxValue;
+        float catchRadius = 2.0f; // Margen de error en unidades de Unity
+
+        // Buscar el pez más cercano en el carril del jugador
+        foreach (FishVisual fish in _riverSpawner.ActiveFishes)
+        {
+            // Solo lo podemos atrapar si subió a la superficie
+            if (fish == null || !fish.IsCatchable) continue;
+
+            float dist = Mathf.Abs(fish.transform.position.x - player.transform.position.x);
+            if (dist <= catchRadius && dist < closestDist)
+            {
+                closestDist = dist;
+                hookedFish = fish;
+            }
+        }
+
+        if (hookedFish != null)
+        {
+            FishData data = hookedFish.Data;
+            _riverSpawner.ActiveFishes.Remove(hookedFish);
+            hookedFish.Hook();
+            
+            player.StartSkillCheck(data);
+        }
+        else
+        {
+            // El jugador apretó pero no había pez en la superficie en su carril
+        }
     }
 
     private void OnFishCaught(PlayerController player, FishData fish)

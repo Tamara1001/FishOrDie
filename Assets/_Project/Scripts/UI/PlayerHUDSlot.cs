@@ -20,8 +20,15 @@ public class PlayerHUDSlot : MonoBehaviour
     {
         Player = player;
 
-        _nameLabel.text  = $"P{player.PlayerID + 1}";
+        // Ej: "<Keyboard>/a" -> "A"
+        string cleanKey = UnityEngine.InputSystem.InputControlPath.ToHumanReadableString(
+            player.BindingPath, UnityEngine.InputSystem.InputControlPath.HumanReadableStringOptions.OmitDevice);
+
+        _nameLabel.text  = $"{player.PlayerName} [{cleanKey.ToUpper()}]";
         _scoreLabel.text = "0";
+
+        if (_nameLabel != null) { Color c = _nameLabel.color; c.a = 1f; _nameLabel.color = c; }
+        if (_scoreLabel != null) { Color c = _scoreLabel.color; c.a = 1f; _scoreLabel.color = c; }
 
         if (_background != null)
         {
@@ -46,13 +53,26 @@ public class PlayerHUDSlot : MonoBehaviour
         if (_eliminatedIcon != null)
         {
             _eliminatedIcon.SetActive(true);
+            if (_eliminatedIcon.TryGetComponent(out Image skullImg))
+            {
+                Color c = skullImg.color;
+                c.a = 1f; // Forzar que la calavera sea 100% visible
+                skullImg.color = c;
+            }
             StartCoroutine(PopUpIconRoutine());
         }
 
-        if (_background == null) return;
-        Color dimmed = _background.color;
-        dimmed.a = 0.12f;
-        _background.color = dimmed;
+        // Bajar opacidad del fondo
+        if (_background != null)
+        {
+            Color dimmed = _background.color;
+            dimmed.a = 0.1f; // Casi transparente
+            _background.color = dimmed;
+        }
+
+        // Bajar opacidad de los textos al 30%
+        if (_nameLabel != null) { Color c = _nameLabel.color; c.a = 0.3f; _nameLabel.color = c; }
+        if (_scoreLabel != null) { Color c = _scoreLabel.color; c.a = 0.3f; _scoreLabel.color = c; }
     }
 
     private System.Collections.IEnumerator PopUpIconRoutine()

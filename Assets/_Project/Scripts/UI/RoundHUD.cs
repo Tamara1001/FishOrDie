@@ -93,10 +93,20 @@ public class RoundHUD : MonoBehaviour
         PlayerHUDSlot slot = _slots.Find(s => s.Player == player);
         slot?.RefreshScore();
 
-        if (_scorePopupPrefab == null) return;
+        if (_scorePopupPrefab == null || slot == null) return;
 
-        Vector3 popupPosition = player.transform.position + Vector3.up * 0.8f;
-        GameObject popup = Instantiate(_scorePopupPrefab, popupPosition, Quaternion.identity);
+        // Instanciamos el popup como hijo del slot (UI)
+        GameObject popup = Instantiate(_scorePopupPrefab, slot.transform);
+        
+        // Lo levantamos un poquito desde el centro del slot
+        if (popup.TryGetComponent(out RectTransform rt))
+        {
+            rt.anchoredPosition = new Vector2(0f, 50f); 
+        }
+        else
+        {
+            popup.transform.localPosition = new Vector3(0f, 50f, 0f);
+        }
 
         if (popup.TryGetComponent(out ScorePopup scorePopup))
             scorePopup.Initialize(delta, player.PlayerColor);

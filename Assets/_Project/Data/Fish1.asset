@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Fish1
   m_EditorClassIdentifier: Assembly-CSharp::FishData
   fishName: Fish1
-  fishSprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  fishSprite: {fileID: 21300000, guid: 480cc8e069a871f4cbf8f998fc82c2b1, type: 3}
   scoreValue: 10
   catchDifficulty: 0.3
   weight: 10

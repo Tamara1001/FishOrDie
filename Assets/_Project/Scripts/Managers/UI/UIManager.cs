@@ -140,8 +140,17 @@ public class UIManager : MonoBehaviour
     public void OnPauseButtonClicked()   => GameManager.Instance.ChangeState(GameManager.GameState.Paused);
     public void OnOptionsClicked()       => optionsPanel?.SetActive(true);
     public void OnCloseOptionsClicked()  => optionsPanel?.SetActive(false);
-    public void OnCreditsClicked()       => creditsPanel?.SetActive(true);
-    public void OnCloseCreditsClicked()  => creditsPanel?.SetActive(false);
+    public void OnCreditsClicked()       
+    {
+        Debug.Log("[UIManager] Abriendo créditos");
+        creditsPanel?.SetActive(true);
+    }
+
+    public void OnCloseCreditsClicked()  
+    {
+        Debug.Log("[UIManager] Cerrando créditos");
+        creditsPanel?.SetActive(false);
+    }
 
     public void OnQuitClicked()
     {

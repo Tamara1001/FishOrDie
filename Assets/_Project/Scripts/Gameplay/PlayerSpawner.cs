@@ -7,29 +7,12 @@ public class PlayerSpawner : MonoBehaviour
     [Header("Setup")]
     [SerializeField] private GameObject _playerPrefab;
 
-    [Range(2, 4)]
-    [SerializeField] private int _numberOfPlayers = 2;
-
-
-
     [Header("Spawn Layout")]
     [Tooltip("Posición Y del muelle donde aparecen los jugadores.")]
     [SerializeField] private float _spawnY = 0f;
 
     [Tooltip("Ancho total del área de spawn. Los jugadores se distribuyen equidistantemente.")]
     [SerializeField] private float _totalSpawnWidth = 6f;
-
-    [Header("Player Defaults")]
-    [Tooltip("Rutas de binding del New Input System. Formato: <Keyboard>/letra\nEjemplos: <Keyboard>/a  <Keyboard>/space  <Keyboard>/g")]
-    [SerializeField] private string[] _defaultBindings =
-    {
-        "<Keyboard>/a",
-        "<Keyboard>/l",
-        "<Keyboard>/g",
-        "<Keyboard>/j"
-    };
-
-    [SerializeField] private Color[] _playerColors = { Color.cyan, Color.red, Color.yellow, Color.green };
 
     public IReadOnlyList<PlayerController> SpawnedPlayers => _spawnedPlayers;
     private readonly List<PlayerController> _spawnedPlayers = new();
@@ -43,6 +26,7 @@ public class PlayerSpawner : MonoBehaviour
             return;
         }
 
+        MatchSettings.Load();
         SpawnPlayers();
     }
 
@@ -54,34 +38,37 @@ public class PlayerSpawner : MonoBehaviour
             return;
         }
 
-        for (int i = 0; i < _numberOfPlayers; i++)
+        int count = MatchSettings.PlayerCount;
+        for (int i = 0; i < count; i++)
         {
-            Vector3 spawnPosition = CalculateSpawnPosition(i);
+            Vector3 spawnPosition = CalculateSpawnPosition(i, count);
             GameObject instance   = Instantiate(_playerPrefab, spawnPosition, Quaternion.identity);
 
-            if (!instance.TryGetComponent(out PlayerController controller))
+            if (instance.TryGetComponent(out PlayerController controller))
             {
-                Debug.LogError("[PlayerSpawner] Player prefab is missing a PlayerController component.");
-                Destroy(instance);
-                continue;
+                // Si está en la mitad derecha de la pantalla (index >= mitad), mira hacia la izquierda
+                bool faceLeft = i >= (count / 2f);
+                
+                controller.Initialize(i, MatchSettings.PlayerBindings[i], MatchSettings.PlayerColors[i], faceLeft, MatchSettings.PlayerNames[i]);
+                _spawnedPlayers.Add(controller);
             }
-
-            controller.Initialize(i, _defaultBindings[i], _playerColors[i]);
-            _spawnedPlayers.Add(controller);
         }
 
-        Debug.Log($"[PlayerSpawner] {_spawnedPlayers.Count} player(s) spawned.");
+        Debug.Log($"[PlayerSpawner] {count} player(s) spawned from MatchSettings.");
     }
 
-    private Vector3 CalculateSpawnPosition(int index)
+    private Vector3 CalculateSpawnPosition(int index, int totalPlayers)
     {
-        if (Camera.main == null) return new Vector3(0f, _spawnY, 0f);
+        Camera cam = Camera.main;
+        if (cam == null) return Vector3.zero;
 
-        // Distribuimos los jugadores usando las fracciones de pantalla (0 a 1)
-        // Ejemplo con 4: 0.125, 0.375, 0.625, 0.875 (igual que un HorizontalLayoutGroup con Force Expand)
-        float fraction = (index + 0.5f) / _numberOfPlayers;
+        // Calcula qué porcentaje de la pantalla ocupa este jugador (ej: 0.125, 0.375...)
+        float fraction = (index + 0.5f) / totalPlayers;
         
-        Vector3 worldPos = Camera.main.ViewportToWorldPoint(new Vector3(fraction, 0.5f, 10f));
-        return new Vector3(worldPos.x, _spawnY, 0f);
+        Vector3 worldPos = cam.ViewportToWorldPoint(new Vector3(fraction, 0.5f, cam.nearClipPlane));
+        worldPos.y = _spawnY;
+        worldPos.z = 0f;
+
+        return worldPos;
     }
 }

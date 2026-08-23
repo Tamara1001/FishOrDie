@@ -2,21 +2,27 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(SpriteRenderer))]
 [DefaultExecutionOrder(0)]
 public class PlayerController : MonoBehaviour
 {
     // -------------------------------------------------------------------------
     // Public State
-    // -------------------------------------------------------------------------
     public int PlayerID    { get; private set; }
+    public string PlayerName { get; private set; }
+    public string BindingPath { get; private set; }
     public int CurrentScore { get; private set; }
     public Color PlayerColor { get; private set; }
 
     public SkillCheck CurrentSkillCheck { get; private set; }
 
+    [Header("UI & Feedback")]
+    [SerializeField] private SpriteRenderer _playerVisualRenderer; // SPRITE DEL JUGADOR (HIJO)
+    [SerializeField] private SpriteRenderer _feedbackSpriteRenderer;
+    [SerializeField] private Sprite _caughtSprite;
+    [SerializeField] private Sprite _lostSprite;
+
     // -------------------------------------------------------------------------
-    // Events
+    // Eventos
     // -------------------------------------------------------------------------
     public event Action<PlayerController>           OnFishAttempt;
     public event Action<PlayerController, FishData> OnFishCaught;
@@ -27,18 +33,8 @@ public class PlayerController : MonoBehaviour
     private InputAction _fishAction;
 
     // -------------------------------------------------------------------------
-    // Private
-    // -------------------------------------------------------------------------
-    private SpriteRenderer _spriteRenderer;
-
-    // -------------------------------------------------------------------------
     // Unity Lifecycle
     // -------------------------------------------------------------------------
-    private void Awake()
-    {
-        _spriteRenderer = GetComponent<SpriteRenderer>();
-    }
-
     private void OnDestroy()
     {
         _fishAction?.Disable();
@@ -48,11 +44,24 @@ public class PlayerController : MonoBehaviour
     // -------------------------------------------------------------------------
     // Setup
     // -------------------------------------------------------------------------
-    public void Initialize(int id, string bindingPath, Color color)
+    public void Initialize(int id, string bindingPath, Color color, bool faceLeft, string playerName)
     {
         PlayerID    = id;
+        PlayerName  = playerName;
+        BindingPath = bindingPath;
         PlayerColor = color;
-        _spriteRenderer.color = color;
+        
+        if (_playerVisualRenderer != null)
+        {
+            _playerVisualRenderer.color = color;
+            // Invertir el sprite si está a la derecha
+            _playerVisualRenderer.flipX = faceLeft;
+        }
+        else
+        {
+            Debug.LogWarning($"[PlayerController] {_playerVisualRenderer} no está asignado en {gameObject.name}");
+        }
+
         gameObject.name = $"Player_{id + 1}";
 
         _fishAction = new InputAction(
@@ -104,13 +113,60 @@ public class PlayerController : MonoBehaviour
     private void HandleSkillCheckCaught(FishData fish)
     {
         CurrentSkillCheck = null;
+        ShowFeedback(_caughtSprite);
         OnFishCaught?.Invoke(this, fish);
     }
 
     private void HandleSkillCheckEscaped()
     {
         CurrentSkillCheck = null;
+        ShowFeedback(_lostSprite);
         Debug.Log($"[{gameObject.name}] ¡El pez escapó!");
+    }
+
+    public void CancelSkillCheck()
+    {
+        CurrentSkillCheck = null;
+    }
+
+    // -------------------------------------------------------------------------
+    // Feedback Routine
+    // -------------------------------------------------------------------------
+    private Coroutine _feedbackRoutine;
+    private void ShowFeedback(Sprite sprite)
+    {
+        if (_feedbackSpriteRenderer == null || sprite == null) return;
+        
+        if (_feedbackRoutine != null) StopCoroutine(_feedbackRoutine);
+        _feedbackRoutine = StartCoroutine(FeedbackRoutine(sprite));
+    }
+
+    private System.Collections.IEnumerator FeedbackRoutine(Sprite sprite)
+    {
+        _feedbackSpriteRenderer.sprite = sprite;
+        _feedbackSpriteRenderer.gameObject.SetActive(true);
+        
+        float duration = 1.2f;
+        float elapsed = 0f;
+        Vector3 startPos = Vector3.up * 0.8f; // Arriba del jugador
+        
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            
+            // Sube suavemente
+            _feedbackSpriteRenderer.transform.localPosition = startPos + Vector3.up * (t * 1f);
+            
+            // Fade out en la segunda mitad
+            Color c = Color.white;
+            if (t > 0.5f) c.a = 1f - ((t - 0.5f) * 2f);
+            _feedbackSpriteRenderer.color = c;
+            
+            yield return null;
+        }
+        
+        _feedbackSpriteRenderer.gameObject.SetActive(false);
     }
 
     // -------------------------------------------------------------------------
