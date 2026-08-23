@@ -9,6 +9,8 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject mainMenuPanel;
     [SerializeField] private GameObject playingHUDPanel;
     [SerializeField] private GameObject victoryPanel;
+    [SerializeField] private TMPro.TMP_Text _victoryText; // NUEVO: Texto de victoria
+    [SerializeField] private GameObject roundTransitionPanel;
 
     [Header("Overlay Panels")]
     [SerializeField] private GameObject optionsPanel;
@@ -21,11 +23,28 @@ public class UIManager : MonoBehaviour
     private void OnEnable()
     {
         GameManager.OnStateChanged += HandleStateChanged;
+        RoundManager.OnVictoryEvent += HandleVictory;
     }
 
     private void OnDisable()
     {
         GameManager.OnStateChanged -= HandleStateChanged;
+        RoundManager.OnVictoryEvent -= HandleVictory;
+    }
+
+    private void HandleVictory(PlayerController winner)
+    {
+        if (_victoryText == null) return;
+
+        if (winner != null)
+        {
+            string colorHex = ColorUtility.ToHtmlStringRGB(winner.PlayerColor);
+            _victoryText.text = $"¡<color=#{colorHex}>{winner.gameObject.name}</color>\nSOBREVIVIÓ AL PARANÁ!";
+        }
+        else
+        {
+            _victoryText.text = "¡TODOS FUERON DEVORADOS!";
+        }
     }
 
     private void Start()
@@ -45,11 +64,12 @@ public class UIManager : MonoBehaviour
 
         switch (newState)
         {
-            case GameManager.GameState.MainMenu:  ShowMainMenu();   break;
-            case GameManager.GameState.Playing:   ShowPlayingHUD(); break;
-            case GameManager.GameState.Paused:    ShowPause();      break;
-            case GameManager.GameState.Victory:   ShowVictory();    break;
-            case GameManager.GameState.GameOver:  ShowVictory();    break;
+            case GameManager.GameState.MainMenu:        ShowMainMenu();        break;
+            case GameManager.GameState.Playing:         ShowPlayingHUD();      break;
+            case GameManager.GameState.RoundTransition: ShowRoundTransition(); break;
+            case GameManager.GameState.Paused:          ShowPause();           break;
+            case GameManager.GameState.Victory:         ShowVictory();         break;
+            case GameManager.GameState.GameOver:        ShowVictory();         break;
             default:
                 Debug.LogWarning($"[UIManager] Unhandled GameState: {newState}");
                 break;
@@ -65,6 +85,7 @@ public class UIManager : MonoBehaviour
         playingHUDPanel?.SetActive(false);
         pausePanel?.SetActive(false);
         victoryPanel?.SetActive(false);
+        roundTransitionPanel?.SetActive(false);
     }
 
     private void ShowPlayingHUD()
@@ -73,6 +94,16 @@ public class UIManager : MonoBehaviour
         playingHUDPanel?.SetActive(true);
         pausePanel?.SetActive(false);
         victoryPanel?.SetActive(false);
+        roundTransitionPanel?.SetActive(false);
+    }
+
+    private void ShowRoundTransition()
+    {
+        mainMenuPanel?.SetActive(false);
+        playingHUDPanel?.SetActive(true); // Mantener HUD visible
+        pausePanel?.SetActive(false);
+        victoryPanel?.SetActive(false);
+        roundTransitionPanel?.SetActive(true);
     }
 
     private void ShowPause()
@@ -81,6 +112,7 @@ public class UIManager : MonoBehaviour
         playingHUDPanel?.SetActive(false);
         pausePanel?.SetActive(true);
         victoryPanel?.SetActive(false);
+        roundTransitionPanel?.SetActive(false);
     }
 
     private void ShowVictory()
@@ -89,6 +121,7 @@ public class UIManager : MonoBehaviour
         playingHUDPanel?.SetActive(false);
         pausePanel?.SetActive(false);
         victoryPanel?.SetActive(true);
+        roundTransitionPanel?.SetActive(false);
     }
 
     private void CloseAllOverlayPanels()

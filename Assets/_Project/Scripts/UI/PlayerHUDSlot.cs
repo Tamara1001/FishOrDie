@@ -43,11 +43,37 @@ public class PlayerHUDSlot : MonoBehaviour
 
     public void MarkEliminated()
     {
-        _eliminatedIcon?.SetActive(true);
+        if (_eliminatedIcon != null)
+        {
+            _eliminatedIcon.SetActive(true);
+            StartCoroutine(PopUpIconRoutine());
+        }
 
         if (_background == null) return;
         Color dimmed = _background.color;
         dimmed.a = 0.12f;
         _background.color = dimmed;
+    }
+
+    private System.Collections.IEnumerator PopUpIconRoutine()
+    {
+        Transform iconTransform = _eliminatedIcon.transform;
+        iconTransform.localScale = Vector3.zero;
+
+        float duration = 0.3f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            // Easing Out Back (overshoot) custom curve
+            float ease = 1f + 2.70158f * Mathf.Pow(t - 1f, 3) + 1.70158f * Mathf.Pow(t - 1f, 2);
+            
+            iconTransform.localScale = Vector3.one * Mathf.Max(0f, ease);
+            yield return null;
+        }
+
+        iconTransform.localScale = Vector3.one;
     }
 }

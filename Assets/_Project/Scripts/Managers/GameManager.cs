@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour
     // -------------------------------------------------------------------------
     // FSM
     // -------------------------------------------------------------------------
-    public enum GameState { MainMenu, Playing, Paused, GameOver, Victory }
+    public enum GameState { MainMenu, Playing, RoundTransition, Paused, GameOver, Victory }
 
     public GameState CurrentState { get; private set; }
     public bool HasActiveSession { get; private set; }

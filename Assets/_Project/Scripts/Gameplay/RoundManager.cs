@@ -23,6 +23,7 @@ public class RoundManager : MonoBehaviour
     public static event Action<PlayerController> OnPlayerEliminated;
     public static event Action<PlayerController, int> OnScoreAdded;
     public static event Action OnRoundReset;
+    public static event Action<PlayerController> OnVictoryEvent;
 
     // -------------------------------------------------------------------------
     // Internal State
@@ -114,25 +115,36 @@ public class RoundManager : MonoBehaviour
     {
         _roundActive = false;
         UnsubscribeFromPlayers();
+        StartCoroutine(RoundTransitionRoutine());
+    }
+
+    private System.Collections.IEnumerator RoundTransitionRoutine()
+    {
+        GameManager.Instance.ChangeState(GameManager.GameState.RoundTransition);
 
         PlayerController loser = FindLowestScoringPlayer();
-        if (loser == null)
+        if (loser != null)
+        {
+            loser.Eliminate();
+            _activePlayers.Remove(loser);
+            OnPlayerEliminated?.Invoke(loser);
+        }
+        else
         {
             Debug.LogWarning("[RoundManager] No se encontró un perdedor. ¿Lista de jugadores vacía?");
-            return;
         }
 
-        loser.Eliminate();
-        _activePlayers.Remove(loser);
-        OnPlayerEliminated?.Invoke(loser);
+        // Momento de tensión visual
+        yield return new WaitForSeconds(3f);
 
         if (_activePlayers.Count <= 1)
         {
             DeclareVictory();
-            return;
         }
-
-        ResetAndStartNextRound();
+        else
+        {
+            ResetAndStartNextRound();
+        }
     }
 
     private void ResetAndStartNextRound()
@@ -141,16 +153,21 @@ public class RoundManager : MonoBehaviour
             player.ResetScore();
 
         OnRoundReset?.Invoke();
+        
+        GameManager.Instance.ChangeState(GameManager.GameState.Playing);
         StartRound();
     }
 
     private void DeclareVictory()
     {
-        if (_activePlayers.Count == 1)
-            Debug.Log($"[RoundManager] ¡Ganador: {_activePlayers[0].gameObject.name}!");
+        PlayerController winner = _activePlayers.Count == 1 ? _activePlayers[0] : null;
+
+        if (winner != null)
+            Debug.Log($"[RoundManager] ¡Ganador: {winner.gameObject.name}!");
         else
             Debug.Log("[RoundManager] No quedan jugadores.");
 
+        OnVictoryEvent?.Invoke(winner);
         GameManager.Instance.ChangeState(GameManager.GameState.Victory);
     }
 
@@ -198,6 +215,7 @@ public class RoundManager : MonoBehaviour
 
     private void SubscribeToPlayers()
     {
+        UnsubscribeFromPlayers();
         foreach (PlayerController p in _activePlayers)
         {
             p.OnFishAttempt += OnFishAttempt;

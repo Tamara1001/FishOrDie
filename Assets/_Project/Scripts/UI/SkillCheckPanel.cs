@@ -61,17 +61,26 @@ public class SkillCheckPanel : MonoBehaviour
         if (_trackArea == null) return;
 
         float trackHeight = _trackArea.rect.height;
-        float halfTrack   = trackHeight * 0.5f;
 
         if (_fishIndicator != null)
         {
-            float fishY = sc.FishPosition * trackHeight - halfTrack;
+            // Forzar anclaje al fondo (bottom)
+            _fishIndicator.anchorMin = new Vector2(0.5f, 0f);
+            _fishIndicator.anchorMax = new Vector2(0.5f, 0f);
+            _fishIndicator.pivot     = new Vector2(0.5f, 0.5f); // Centro del pez
+            
+            float fishY = sc.FishPosition * trackHeight;
             _fishIndicator.anchoredPosition = new Vector2(0f, fishY);
         }
 
         if (_barFill != null)
         {
-            float barY      = sc.BarPosition * trackHeight - halfTrack;
+            // Forzar anclaje al fondo (bottom) y pivot en la base
+            _barFill.anchorMin = new Vector2(0.5f, 0f);
+            _barFill.anchorMax = new Vector2(0.5f, 0f);
+            _barFill.pivot     = new Vector2(0.5f, 0f); 
+            
+            float barY      = sc.BarPosition * trackHeight;
             float barHeight = sc.BarSize * trackHeight;
 
             _barFill.anchoredPosition = new Vector2(0f, barY);

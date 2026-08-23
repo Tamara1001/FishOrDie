@@ -36,6 +36,13 @@ public class PlayerSpawner : MonoBehaviour
 
     private void Awake()
     {
+        // Seguro anti-clones (por si el GameSetup quedó dentro del DontDestroyOnLoad)
+        if (FindObjectsByType<PlayerSpawner>(FindObjectsSortMode.None).Length > 1)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         SpawnPlayers();
     }
 
@@ -68,11 +75,13 @@ public class PlayerSpawner : MonoBehaviour
 
     private Vector3 CalculateSpawnPosition(int index)
     {
-        if (_numberOfPlayers == 1)
-            return new Vector3(0f, _spawnY, 0f);
+        if (Camera.main == null) return new Vector3(0f, _spawnY, 0f);
 
-        float step = _totalSpawnWidth / (_numberOfPlayers - 1);
-        float x    = -_totalSpawnWidth / 2f + index * step;
-        return new Vector3(x, _spawnY, 0f);
+        // Distribuimos los jugadores usando las fracciones de pantalla (0 a 1)
+        // Ejemplo con 4: 0.125, 0.375, 0.625, 0.875 (igual que un HorizontalLayoutGroup con Force Expand)
+        float fraction = (index + 0.5f) / _numberOfPlayers;
+        
+        Vector3 worldPos = Camera.main.ViewportToWorldPoint(new Vector3(fraction, 0.5f, 10f));
+        return new Vector3(worldPos.x, _spawnY, 0f);
     }
 }
