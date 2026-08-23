@@ -98,11 +98,81 @@ public class PlayerController : MonoBehaviour
         if (CurrentSkillCheck != null && CurrentSkillCheck.IsActive)
         {
             CurrentSkillCheck.Tick(Time.deltaTime, _fishAction.IsPressed());
+            
+            // Tensión visual (vibración) mientras pesca
+            if (_playerVisualRenderer != null)
+            {
+                Transform vis = _playerVisualRenderer.transform;
+                // Vibración suave de base, vibración fuerte si está presionando/tirando
+                float shakeForce = _fishAction.IsPressed() ? 0.06f : 0.015f; 
+                vis.localPosition = new Vector3(
+                    UnityEngine.Random.Range(-shakeForce, shakeForce),
+                    UnityEngine.Random.Range(-shakeForce, shakeForce),
+                    0f
+                );
+            }
             return;
+        }
+        else
+        {
+            // Restablecer posición si no está pescando ni en eliminación
+            if (_playerVisualRenderer != null && gameObject.activeSelf && _squashRoutine == null)
+            {
+                _playerVisualRenderer.transform.localPosition = Vector3.Lerp(_playerVisualRenderer.transform.localPosition, Vector3.zero, Time.deltaTime * 10f);
+            }
         }
 
         if (_fishAction.WasPressedThisFrame())
+        {
+            DoSquashAndStretch();
             OnFishAttempt?.Invoke(this);
+        }
+    }
+
+    private Vector3 _baseVisualScale = Vector3.one;
+    private bool _hasSavedBaseScale = false;
+
+    private Coroutine _squashRoutine;
+    private void DoSquashAndStretch()
+    {
+        if (_playerVisualRenderer == null) return;
+        
+        if (!_hasSavedBaseScale)
+        {
+            _baseVisualScale = _playerVisualRenderer.transform.localScale;
+            _hasSavedBaseScale = true;
+        }
+
+        if (_squashRoutine != null) StopCoroutine(_squashRoutine);
+        _squashRoutine = StartCoroutine(SquashRoutine());
+    }
+
+    private System.Collections.IEnumerator SquashRoutine()
+    {
+        Transform vis = _playerVisualRenderer.transform;
+        
+        float baseScaleX = _baseVisualScale.x;
+        float baseScaleY = _baseVisualScale.y;
+        float baseScaleZ = _baseVisualScale.z;
+
+        float duration = 0.15f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            
+            // Una curva simple que baja a 0.7 y vuelve a 1.0 en Y, y se ensancha en X
+            float scaleY = baseScaleY * (1f - Mathf.Sin(t * Mathf.PI) * 0.3f);
+            float scaleX = baseScaleX * (1f + Mathf.Sin(t * Mathf.PI) * 0.3f);
+            
+            vis.localScale = new Vector3(scaleX, scaleY, baseScaleZ);
+            yield return null;
+        }
+
+        vis.localScale = _baseVisualScale;
+        _squashRoutine = null; // Liberamos la variable para que otros efectos puedan funcionar
     }
 
     // -------------------------------------------------------------------------
@@ -215,6 +285,40 @@ public class PlayerController : MonoBehaviour
         CurrentSkillCheck = null;
         _fishAction?.Disable();
         Debug.Log($"[{gameObject.name}] ¡Devorado por el Monstruo del Paraná!");
+        
+        StartCoroutine(DragDownRoutine());
+    }
+
+    private System.Collections.IEnumerator DragDownRoutine()
+    {
+        if (_playerVisualRenderer == null) yield break;
+        
+        Transform vis = _playerVisualRenderer.transform;
+        Vector3 startPos = vis.localPosition;
+        Vector3 targetPos = startPos + Vector3.down * 3f; // Jalado hacia abajo
+        
+        float duration = 0.5f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            // Curva acelerada (ease in) para dar sensación de fuerza
+            float easeIn = t * t * t;
+            
+            vis.localPosition = Vector3.Lerp(startPos, targetPos, easeIn);
+            
+            // Giro violento
+            vis.Rotate(Vector3.forward, 720f * Time.deltaTime);
+
+            // Escalar un poquito hacia cero simulando perspectiva
+            vis.localScale = Vector3.Lerp(vis.localScale, Vector3.zero, easeIn * 0.1f);
+
+            yield return null;
+        }
+
         gameObject.SetActive(false);
     }
 }

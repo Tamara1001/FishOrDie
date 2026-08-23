@@ -44,10 +44,52 @@ public class PlayerHUDSlot : MonoBehaviour
         _skillCheckPanel?.Initialize(player);
     }
 
+    private int _displayedScore = 0;
+    private Coroutine _scoreRoutine;
+
     public void RefreshScore()
     {
-        if (Player != null)
-            _scoreLabel.text = Player.CurrentScore.ToString();
+        if (Player == null) return;
+        
+        if (_scoreRoutine != null) StopCoroutine(_scoreRoutine);
+        _scoreRoutine = StartCoroutine(ScoreRollRoutine(Player.CurrentScore));
+    }
+
+    private System.Collections.IEnumerator ScoreRollRoutine(int targetScore)
+    {
+        int startScore = _displayedScore;
+        float duration = 0.5f;
+        float elapsed = 0f;
+
+        // Flash blanco en el fondo si ganamos puntos
+        Color originalBgColor = _background != null ? _background.color : Color.white;
+        
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            
+            // Rodar el número
+            _displayedScore = Mathf.RoundToInt(Mathf.Lerp(startScore, targetScore, t));
+            _scoreLabel.text = _displayedScore.ToString();
+
+            // Animación de tamaño (Pop)
+            float scale = 1f + Mathf.Sin(t * Mathf.PI) * 0.3f;
+            _scoreLabel.transform.localScale = Vector3.one * scale;
+
+            // Flash del fondo (si sumamos puntos)
+            if (_background != null && targetScore > startScore)
+            {
+                _background.color = Color.Lerp(Color.white, originalBgColor, t);
+            }
+
+            yield return null;
+        }
+
+        _displayedScore = targetScore;
+        _scoreLabel.text = _displayedScore.ToString();
+        _scoreLabel.transform.localScale = Vector3.one;
+        if (_background != null) _background.color = originalBgColor;
     }
 
     public void MarkEliminated()

@@ -102,8 +102,22 @@ public class RoundHUD : MonoBehaviour
     {
         if (_timerLabel == null) return;
 
-        _timerLabel.text  = Mathf.CeilToInt(remaining).ToString();
-        _timerLabel.color = remaining <= 5f ? Color.red : Color.white;
+        int seconds = Mathf.CeilToInt(remaining);
+        _timerLabel.text = seconds.ToString();
+        
+        if (remaining <= 5f && remaining > 0f)
+        {
+            _timerLabel.color = Color.red;
+            // Latido (Pulse) basado en los decimales del tiempo restante
+            // Mathf.PingPong(remaining, 1f) va de 0 a 1 a medida que pasa el segundo
+            float pulse = 1f + Mathf.PingPong(remaining * 2f, 0.5f);
+            _timerLabel.transform.localScale = Vector3.one * pulse;
+        }
+        else
+        {
+            _timerLabel.color = Color.white;
+            _timerLabel.transform.localScale = Vector3.one;
+        }
     }
 
     private void HandleScoreAdded(PlayerController player, int delta)

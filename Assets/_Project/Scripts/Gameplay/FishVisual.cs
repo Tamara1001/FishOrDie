@@ -28,6 +28,40 @@ public class FishVisual : MonoBehaviour
         {
             _sr.sprite = data.fishSprite;
             _sr.flipX = direction.x < 0;
+
+            if (data.catchDifficulty >= 0.7f)
+            {
+                StartCoroutine(GhostTrailRoutine());
+            }
+        }
+    }
+
+    private System.Collections.IEnumerator GhostTrailRoutine()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(0.1f);
+
+            GameObject ghost = new GameObject("FishGhost");
+            ghost.transform.position = transform.position;
+            ghost.transform.localScale = transform.localScale;
+            
+            SpriteRenderer ghostSr = ghost.AddComponent<SpriteRenderer>();
+            ghostSr.sprite = _sr.sprite;
+            ghostSr.flipX = _sr.flipX;
+            // Opacidad inicial más alta (70%) para que se note más
+            ghostSr.color = new Color(_sr.color.r, _sr.color.g, _sr.color.b, 0.7f);
+            
+            // ¡CRUCIAL! Copiar la capa de renderizado para que no quede detrás del fondo
+            ghostSr.sortingLayerID = _sr.sortingLayerID;
+            ghostSr.sortingLayerName = _sr.sortingLayerName;
+            
+            // Usamos EXACTAMENTE el mismo Order in Layer. Si le restamos 1, 
+            // corre el riesgo de irse a -1 y quedar detrás del río.
+            ghostSr.sortingOrder = _sr.sortingOrder;
+
+            // Le agregamos el script de auto-desvanecimiento para que se maneje solo
+            ghost.AddComponent<FishGhostFader>();
         }
     }
 
@@ -64,5 +98,33 @@ public class FishVisual : MonoBehaviour
     public void Hook()
     {
         Destroy(gameObject);
+    }
+}
+
+public class FishGhostFader : MonoBehaviour
+{
+    private float _duration = 0.4f;
+    private SpriteRenderer _sr;
+    private float _startAlpha;
+
+    private void Awake()
+    {
+        _sr = GetComponent<SpriteRenderer>();
+        if (_sr != null) _startAlpha = _sr.color.a;
+    }
+
+    private void Update()
+    {
+        if (_sr == null) return;
+        
+        Color c = _sr.color;
+        // Restamos opacidad basados en el alpha inicial y la duración
+        c.a -= (_startAlpha / _duration) * Time.deltaTime;
+        _sr.color = c;
+
+        if (c.a <= 0f)
+        {
+            Destroy(gameObject);
+        }
     }
 }
