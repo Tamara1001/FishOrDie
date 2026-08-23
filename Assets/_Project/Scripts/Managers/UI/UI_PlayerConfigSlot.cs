@@ -58,6 +58,7 @@ public class UI_PlayerConfigSlot : MonoBehaviour
         
         _colorImage.color = newColor;
         MatchSettings.PlayerColors[_playerIndex] = newColor;
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Click");
     }
 
     private void StartRebind()
@@ -65,6 +66,8 @@ public class UI_PlayerConfigSlot : MonoBehaviour
         // Desactivar botón temporalmente para que no hagan doble clic
         _keyButton.interactable = false;
         _keyText.text = "...";
+        
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Click");
 
         // Creamos una acción temporal solo para escuchar la próxima tecla
         _tempAction = new InputAction(type: InputActionType.Button, binding: MatchSettings.PlayerBindings[_playerIndex]);
@@ -77,6 +80,8 @@ public class UI_PlayerConfigSlot : MonoBehaviour
                 MatchSettings.PlayerBindings[_playerIndex] = newBinding;
                 
                 UpdateKeyText(newBinding);
+                
+                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_InputBind");
                 
                 operation.Dispose();
                 _tempAction.Dispose();

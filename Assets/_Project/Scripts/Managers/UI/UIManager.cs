@@ -133,13 +133,47 @@ public class UIManager : MonoBehaviour
     // -------------------------------------------------------------------------
     // Public Button Callbacks
     // -------------------------------------------------------------------------
-    public void OnPlayClicked()          => GameManager.Instance.StartNewGame();
-    public void OnResumeButtonClicked()  => GameManager.Instance.ResumeFromPause();
-    public void OnRestartButtonClicked() => GameManager.Instance.StartNewGame();
-    public void OnReturnToMenuClicked()  => GameManager.Instance.ReturnToMainMenu();
-    public void OnPauseButtonClicked()   => GameManager.Instance.ChangeState(GameManager.GameState.Paused);
-    public void OnOptionsClicked()       => optionsPanel?.SetActive(true);
-    public void OnCloseOptionsClicked()  => optionsPanel?.SetActive(false);
+    public void OnPlayClicked()
+    {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_StartGame");
+        GameManager.Instance.StartNewGame();
+    }
+    
+    public void OnResumeButtonClicked()
+    {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Click");
+        GameManager.Instance.ResumeFromPause();
+    }
+    
+    public void OnRestartButtonClicked()
+    {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_StartGame");
+        GameManager.Instance.StartNewGame();
+    }
+    
+    public void OnReturnToMenuClicked()
+    {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Cancel");
+        GameManager.Instance.ReturnToMainMenu();
+    }
+    
+    public void OnPauseButtonClicked()
+    {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Click");
+        GameManager.Instance.ChangeState(GameManager.GameState.Paused);
+    }
+    
+    public void OnOptionsClicked()
+    {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Click");
+        optionsPanel?.SetActive(true);
+    }
+    
+    public void OnCloseOptionsClicked()
+    {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Cancel");
+        optionsPanel?.SetActive(false);
+    }
     public void OnCreditsClicked()       
     {
         Debug.Log("[UIManager] Abriendo créditos");

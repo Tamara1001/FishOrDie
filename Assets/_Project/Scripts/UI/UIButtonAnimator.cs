@@ -176,6 +176,8 @@ public class UIButtonAnimator : MonoBehaviour,
         _isHovered   = true;
         _targetScale = _originalScale * hoverScale;
         _targetColor = hoverColor;
+        
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Hover");
     }
 
     /// <summary>

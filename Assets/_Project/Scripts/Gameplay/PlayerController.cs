@@ -48,12 +48,30 @@ public class PlayerController : MonoBehaviour
     // -------------------------------------------------------------------------
     // Setup
     // -------------------------------------------------------------------------
+    private AudioSource _localAudioSource;
+    private bool _isPlayingTensionSFX;
+
     public void Initialize(int id, string bindingPath, Color color, bool faceLeft, string playerName)
     {
         PlayerID    = id;
         PlayerName  = playerName;
         BindingPath = bindingPath;
         PlayerColor = color;
+        
+        // Crear un AudioSource local dinámicamente para ruidos que se deben cortar (Ej: la caña)
+        _localAudioSource = gameObject.AddComponent<AudioSource>();
+        _localAudioSource.loop = true;
+        _localAudioSource.playOnAwake = false;
+        
+        if (AudioManager.Instance != null)
+        {
+            _localAudioSource.outputAudioMixerGroup = AudioManager.Instance.SFXMixerGroup;
+            if (AudioManager.Instance.TryGetSFXEntry("SkillCheck_Tension", out var entry))
+            {
+                _localAudioSource.clip = entry.clip;
+                _localAudioSource.volume = entry.volume > 0 ? entry.volume : 1f;
+            }
+        }
         
         if (_playerVisualRenderer != null)
         {
@@ -99,6 +117,24 @@ public class PlayerController : MonoBehaviour
         {
             CurrentSkillCheck.Tick(Time.deltaTime, _fishAction.IsPressed());
             
+            // Audio del riel de pesca (solo suena cuando está interactuando)
+            if (_fishAction.IsPressed())
+            {
+                if (!_isPlayingTensionSFX && _localAudioSource != null && _localAudioSource.clip != null)
+                {
+                    _localAudioSource.Play();
+                    _isPlayingTensionSFX = true;
+                }
+            }
+            else
+            {
+                if (_isPlayingTensionSFX && _localAudioSource != null)
+                {
+                    _localAudioSource.Stop();
+                    _isPlayingTensionSFX = false;
+                }
+            }
+
             // Tensión visual (vibración) mientras pesca
             if (_playerVisualRenderer != null)
             {
@@ -137,6 +173,8 @@ public class PlayerController : MonoBehaviour
     {
         if (_playerVisualRenderer == null) return;
         
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Player_InputPress");
+
         if (!_hasSavedBaseScale)
         {
             _baseVisualScale = _playerVisualRenderer.transform.localScale;
@@ -187,20 +225,43 @@ public class PlayerController : MonoBehaviour
     private void HandleSkillCheckCaught(FishData fish)
     {
         CurrentSkillCheck = null;
+        StopLocalTensionAudio();
         ShowFeedback(_caughtSprite);
+        
+        // Un solo sonido de captura, pero variamos el pitch dinámicamente según la dificultad.
+        // Pez fácil (Mojarra, diff ~0.2) -> Pitch alto (1.2f, suena a pescadito chiquito)
+        // Pez difícil (Dorado, diff ~0.9) -> Pitch bajo (0.8f, suena a pez gordo y pesado)
+        if (AudioManager.Instance != null)
+        {
+            float dynamicPitch = Mathf.Lerp(1.2f, 0.8f, fish.catchDifficulty);
+            AudioManager.Instance.PlaySFX("Caught_Fish", dynamicPitch);
+        }
+
         OnFishCaught?.Invoke(this, fish);
     }
 
     private void HandleSkillCheckEscaped()
     {
         CurrentSkillCheck = null;
+        StopLocalTensionAudio();
         ShowFeedback(_lostSprite);
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Fish_Escaped");
         Debug.Log($"[{gameObject.name}] ¡El pez escapó!");
     }
 
     public void CancelSkillCheck()
     {
         CurrentSkillCheck = null;
+        StopLocalTensionAudio();
+    }
+
+    private void StopLocalTensionAudio()
+    {
+        if (_isPlayingTensionSFX && _localAudioSource != null)
+        {
+            _localAudioSource.Stop();
+            _isPlayingTensionSFX = false;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -283,8 +344,14 @@ public class PlayerController : MonoBehaviour
     public void Eliminate()
     {
         CurrentSkillCheck = null;
+        StopLocalTensionAudio();
         _fishAction?.Disable();
         Debug.Log($"[{gameObject.name}] ¡Devorado por el Monstruo del Paraná!");
+        
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySFX("Monster_Drag");
+        }
         
         StartCoroutine(DragDownRoutine());
     }

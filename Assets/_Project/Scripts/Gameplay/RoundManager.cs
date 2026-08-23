@@ -73,6 +73,8 @@ public class RoundManager : MonoBehaviour
         UnsubscribeFromPlayers();
     }
 
+    private int _lastTickSecond = -1;
+
     // -------------------------------------------------------------------------
     // Game Loop
     // -------------------------------------------------------------------------
@@ -83,6 +85,14 @@ public class RoundManager : MonoBehaviour
         if (GameManager.Instance.CurrentState != GameManager.GameState.Playing) return;
 
         _timeRemaining -= Time.deltaTime;
+        
+        int currentSecond = Mathf.CeilToInt(_timeRemaining);
+        if (currentSecond <= 5 && currentSecond > 0 && currentSecond != _lastTickSecond)
+        {
+            _lastTickSecond = currentSecond;
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Round_Tick_Warning");
+        }
+
         OnTimerTick?.Invoke(Mathf.Max(_timeRemaining, 0f));
 
         if (_timeRemaining <= 0f)
@@ -116,6 +126,7 @@ public class RoundManager : MonoBehaviour
         if (_riverSpawner != null) 
             _riverSpawner.StartSpawning(_fishPool, _activePlayers);
 
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Round_Start");
         Debug.Log($"[RoundManager] Ronda iniciada con {_activePlayers.Count} jugador(es).");
     }
 
@@ -123,6 +134,8 @@ public class RoundManager : MonoBehaviour
     {
         _roundActive = false;
         UnsubscribeFromPlayers();
+
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Round_End");
 
         // Forzar cancelación de cualquier pesca en curso
         foreach (PlayerController p in _activePlayers)
@@ -204,6 +217,8 @@ public class RoundManager : MonoBehaviour
         else
             Debug.Log("[RoundManager] No quedan jugadores.");
 
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Match_Victory");
+
         OnVictoryEvent?.Invoke(winner);
         GameManager.Instance.ChangeState(GameManager.GameState.Victory);
     }
@@ -239,6 +254,7 @@ public class RoundManager : MonoBehaviour
             _riverSpawner.ActiveFishes.Remove(hookedFish);
             hookedFish.Hook();
             
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Fish_Alert");
             player.StartSkillCheck(data);
         }
         else

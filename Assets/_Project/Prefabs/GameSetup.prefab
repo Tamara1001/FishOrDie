@@ -1,0 +1,95 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3923088144089167476
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2401509042873792473}
+  - component: {fileID: 861679048040289051}
+  - component: {fileID: 6900901245987427968}
+  - component: {fileID: 4904824440816886277}
+  m_Layer: 0
+  m_Name: GameSetup
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2401509042873792473
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3923088144089167476}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &861679048040289051
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3923088144089167476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bce10159d01ce0f4596178ccc7581966, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoundManager
+  _roundDuration: 30
+  _fishPool:
+  - {fileID: 11400000, guid: 195f7ca6550937342b50b4f5343d9f70, type: 2}
+  - {fileID: 11400000, guid: 195f7ca6550937342b50b4f5343d9f70, type: 2}
+  - {fileID: 11400000, guid: 195f7ca6550937342b50b4f5343d9f70, type: 2}
+  - {fileID: 11400000, guid: 195f7ca6550937342b50b4f5343d9f70, type: 2}
+  - {fileID: 11400000, guid: 195f7ca6550937342b50b4f5343d9f70, type: 2}
+  - {fileID: 11400000, guid: 195f7ca6550937342b50b4f5343d9f70, type: 2}
+  - {fileID: 11400000, guid: 489d95dac2515f04a8bdf65d436829ad, type: 2}
+  - {fileID: 11400000, guid: 489d95dac2515f04a8bdf65d436829ad, type: 2}
+  - {fileID: 11400000, guid: 489d95dac2515f04a8bdf65d436829ad, type: 2}
+  - {fileID: 11400000, guid: 6ba72a84219c7ef45a8fd24dfb143f29, type: 2}
+  _playerSpawner: {fileID: 4904824440816886277}
+  _riverSpawner: {fileID: 6900901245987427968}
+--- !u!114 &6900901245987427968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3923088144089167476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d1b070a0b966b745969c1e411992687, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RiverSpawner
+  _fishPrefab: {fileID: 840746642103107266, guid: 02a7e2f6ef7a2414c9f1d3d5e77d56a9, type: 3}
+  _minSpawnDelay: 1
+  _maxSpawnDelay: 3
+  _minY: -4
+  _maxY: -1
+  _spawnX: 12
+--- !u!114 &4904824440816886277
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3923088144089167476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 362aa91790135f64a9ef94e948d07b54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSpawner
+  _playerPrefab: {fileID: 428117231312637773, guid: 60144029af515ec40902297a72cd34cb, type: 3}
+  _spawnY: 0
+  _totalSpawnWidth: 6

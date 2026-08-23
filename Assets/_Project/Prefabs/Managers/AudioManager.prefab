@@ -44,9 +44,84 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a79ba6b4a3d216b48b40a8c16dafe57f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  _mainMixer: {fileID: 24100000, guid: 3f0501d393617cc46bc6600c8c7e9e7c, type: 2}
   _musicMixerGroup: {fileID: -8735618299365240609, guid: 3f0501d393617cc46bc6600c8c7e9e7c, type: 2}
   _sfxMixerGroup: {fileID: 3572744044790777015, guid: 3f0501d393617cc46bc6600c8c7e9e7c, type: 2}
-  _sfxLibrary: []
-  _bgmLibrary: []
-  _mainMenuMusic: {fileID: 0}
+  _sfxLibrary:
+  - id: UI_Click
+    clip: {fileID: 8300000, guid: 281f6dae429022344b0b84615f4db21b, type: 3}
+    randomizePitch: 0
+    volume: 1
+  - id: UI_Hover
+    clip: {fileID: 0}
+    randomizePitch: 0
+    volume: 1
+  - id: UI_StartGame
+    clip: {fileID: 8300000, guid: 75467aed78d3ec8419b69755bab736c5, type: 3}
+    randomizePitch: 0
+    volume: 1
+  - id: UI_Cancel
+    clip: {fileID: 0}
+    randomizePitch: 0
+    volume: 1
+  - id: UI_InputBind
+    clip: {fileID: 0}
+    randomizePitch: 0
+    volume: 1
+  - id: UI_ScoreRolling
+    clip: {fileID: 0}
+    randomizePitch: 0
+    volume: 1
+  - id: SkillCheck_Tension
+    clip: {fileID: 8300000, guid: 778a8f0564e268e4eb86b2be38997564, type: 3}
+    randomizePitch: 0
+    volume: 1
+  - id: Player_InputPress
+    clip: {fileID: 0}
+    randomizePitch: 0
+    volume: 1
+  - id: Fish_Alert
+    clip: {fileID: 8300000, guid: 75467aed78d3ec8419b69755bab736c5, type: 3}
+    randomizePitch: 0
+    volume: 1
+  - id: Caught_Fish
+    clip: {fileID: 8300000, guid: 75467aed78d3ec8419b69755bab736c5, type: 3}
+    randomizePitch: 0
+    volume: 1
+  - id: Fish_Escaped
+    clip: {fileID: 8300000, guid: 2c58262711923eb4c85a86c658ecb578, type: 3}
+    randomizePitch: 0
+    volume: 1
+  - id: Round_Start
+    clip: {fileID: 0}
+    randomizePitch: 0
+    volume: 1
+  - id: Round_Tick_Warning
+    clip: {fileID: 0}
+    randomizePitch: 0
+    volume: 1
+  - id: Round_End
+    clip: {fileID: 0}
+    randomizePitch: 0
+    volume: 1
+  - id: Monster_Drag
+    clip: {fileID: 0}
+    randomizePitch: 0
+    volume: 1
+  - id: Match_Victory
+    clip: {fileID: 8300000, guid: afb913a0014cd7349ac1c6c3e815436b, type: 3}
+    randomizePitch: 0
+    volume: 1
+  _bgmLibrary:
+  - id: Music_Menu
+    clip: {fileID: 8300000, guid: 2b15a61a8459d17459d6639a195d64b3, type: 3}
+  - id: Amb_River
+    clip: {fileID: 8300000, guid: b52f481d0be9b70418d1f800395d9129, type: 3}
+  - id: Music_Gameplay
+    clip: {fileID: 8300000, guid: f3655bc061b132643a3dd0d9c57b5784, type: 3}
+  - id: 'Music_Gameplay_Tension '
+    clip: {fileID: 0}
+  _mainMenuMusicId: Music_Menu
+  _defaultAmbienceId: Amb_River
   _musicTargetVolume: 1
+  _ambienceTargetVolume: 0.5

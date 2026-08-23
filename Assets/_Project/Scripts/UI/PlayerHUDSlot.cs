@@ -64,6 +64,8 @@ public class PlayerHUDSlot : MonoBehaviour
         // Flash blanco en el fondo si ganamos puntos
         Color originalBgColor = _background != null ? _background.color : Color.white;
         
+        int lastPlayedScore = _displayedScore;
+
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
@@ -72,6 +74,13 @@ public class PlayerHUDSlot : MonoBehaviour
             // Rodar el número
             _displayedScore = Mathf.RoundToInt(Mathf.Lerp(startScore, targetScore, t));
             _scoreLabel.text = _displayedScore.ToString();
+            
+            // Sonido de cuenta (si el número cambió)
+            if (_displayedScore != lastPlayedScore && AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySFX("UI_ScoreRolling");
+                lastPlayedScore = _displayedScore;
+            }
 
             // Animación de tamaño (Pop)
             float scale = 1f + Mathf.Sin(t * Mathf.PI) * 0.3f;

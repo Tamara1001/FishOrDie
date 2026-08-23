@@ -5,13 +5,8 @@ using UnityEngine;
 using UnityEngine.Audio;
 
 /// <summary>
-/// Controlador central de audio del proyecto.
-///
-/// Reglas de Arquitectura:
-/// - Singleton con DontDestroyOnLoad. Los duplicados se autodestruyen en Awake.
-/// - Se suscribe a GameManager.OnStateChanged para reaccionar a los estados globales.
-/// - Usa diccionarios para buscar clips en tiempo O(1) y evitar iteraciones por frame.
-/// - Las transiciones de BGM usan corrutinas de crossfade para evitar cortes abruptos.
+/// Controlador central de audio del proyecto (Arquitectura Profesional).
+/// Soporta Música Dinámica (Stems), Aleatoriedad de Tono (Pitch), y Canales Independientes.
 /// </summary>
 public class AudioManager : MonoBehaviour
 {
@@ -39,27 +34,35 @@ public class AudioManager : MonoBehaviour
     [Serializable]
     public struct SFXEntry
     {
-        [Tooltip("Unique string ID used to play this effect (e.g. 'sfx_laser', 'sfx_coin').")]
+        [Tooltip("ID único (ej: 'UI_Click', 'Fish_Caught').")]
         public string id;
-        [Tooltip("The AudioClip to play for this entry.")]
         public AudioClip clip;
+        [Tooltip("Si es true, variará levemente el tono (pitch) cada vez que se reproduzca para no fatigar el oído.")]
+        public bool randomizePitch;
+        [Range(0f, 1f)]
+        public float volume;
     }
 
     [Serializable]
     public struct BGMEntry
     {
-        [Tooltip("Unique string ID for this background music track (e.g. 'bgm_dungeon', 'bgm_boss').")]
+        [Tooltip("ID único (ej: 'Music_Menu', 'Music_Gameplay').")]
         public string id;
-        [Tooltip("The AudioClip for this BGM entry.")]
         public AudioClip clip;
     }
 
     // -------------------------------------------------------------------------
-    // Inspector — Audio Mixer Channels
+    // Inspector — Audio Mixer & Channels
     // -------------------------------------------------------------------------
+    [Header("Audio Mixer")]
+    [Tooltip("El AudioMixer principal del proyecto (donde están los parámetros Master, Music y SFX)")]
+    [SerializeField] private AudioMixer _mainMixer;
+    
     [Header("Audio Mixer Groups")]
     [SerializeField] private AudioMixerGroup _musicMixerGroup;
     [SerializeField] private AudioMixerGroup _sfxMixerGroup;
+
+    public AudioMixerGroup SFXMixerGroup => _sfxMixerGroup;
 
     // -------------------------------------------------------------------------
     // Inspector — Sound Libraries
@@ -68,29 +71,39 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private List<SFXEntry> _sfxLibrary = new List<SFXEntry>();
     [SerializeField] private List<BGMEntry> _bgmLibrary = new List<BGMEntry>();
 
-    [Tooltip("Music that plays automatically on the Main Menu.")]
-    [SerializeField] private AudioClip _mainMenuMusic;
+    [Header("Auto-Play Settings")]
+    [Tooltip("ID de la música base que suena al iniciar (Ej: 'Music_Menu')")]
+    [SerializeField] private string _mainMenuMusicId;
+    [Tooltip("ID del ambiente que suena al iniciar (Ej: 'Amb_River')")]
+    [SerializeField] private string _defaultAmbienceId;
 
     [Header("Transition Settings")]
     [SerializeField][Range(0f, 1f)] private float _musicTargetVolume = 1f;
+    [SerializeField][Range(0f, 1f)] private float _ambienceTargetVolume = 0.5f;
 
     // -------------------------------------------------------------------------
     // Runtime — Audio Sources and Internal State
     // -------------------------------------------------------------------------
-    private AudioSource _musicSource;
+    private AudioSource _musicSourceBase;
+    private AudioSource _musicSourceTension; // Para el Stem de Tensión
     private AudioSource _sfxSource;
+    private AudioSource _ambienceSource;
+    
     private Coroutine _fadeCoroutine;
+    private Coroutine _tensionFadeCoroutine;
 
-    // O(1) lookup dictionaries — populated in Awake from the serialized libraries.
-    private Dictionary<string, AudioClip> _sfxDict;
+    // O(1) lookup dictionaries
+    private Dictionary<string, SFXEntry> _sfxDict;
     private Dictionary<string, AudioClip> _bgmDict;
+
+    // Object Pool para SFX con Pitch Variable (evita pisar el pitch global)
+    private Queue<AudioSource> _sfxPool = new Queue<AudioSource>();
 
     // -------------------------------------------------------------------------
     // Unity Lifecycle
     // -------------------------------------------------------------------------
     private void Awake()
     {
-        // Singleton guard — destroy any duplicate that loads after the first instance.
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -100,220 +113,267 @@ public class AudioManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // AudioSources are created dynamically to keep the prefab hierarchy clean.
-        _musicSource = CreateAudioSource("MusicSource", _musicMixerGroup, loop: true);
-        _sfxSource = CreateAudioSource("SFXSource", _sfxMixerGroup, loop: false);
+        // Crear Canales de Audio Dedicados
+        _musicSourceBase = CreateAudioSource("MusicSource_Base", _musicMixerGroup, loop: true);
+        _musicSourceTension = CreateAudioSource("MusicSource_Tension", _musicMixerGroup, loop: true);
+        _sfxSource = CreateAudioSource("SFXSource_Global", _sfxMixerGroup, loop: false);
+        _ambienceSource = CreateAudioSource("AmbienceSource", _musicMixerGroup, loop: true);
 
-        _musicSource.volume = 0f;
+        _musicSourceBase.volume = 0f;
+        _musicSourceTension.volume = 0f;
+        _ambienceSource.volume = 0f;
+
+        // Pre-crear pool de SFX
+        for(int i = 0; i < 5; i++)
+        {
+            AudioSource poolSrc = CreateAudioSource($"SFXPool_{i}", _sfxMixerGroup, loop: false);
+            _sfxPool.Enqueue(poolSrc);
+        }
 
         BuildLookupDictionaries();
     }
 
     private void Start()
     {
-        // Volumes are loaded in Start (one frame after Awake) to ensure the Mixer is fully initialised.
         LoadSavedVolumePreferences();
 
-        if (_mainMenuMusic != null)
-        {
-            PlayMusicWithCrossfade(_mainMenuMusic);
-        }
+        if (!string.IsNullOrEmpty(_mainMenuMusicId))
+            PlayBGM(_mainMenuMusicId);
+            
+        if (!string.IsNullOrEmpty(_defaultAmbienceId))
+            PlayAmbience(_defaultAmbienceId);
     }
 
-    private void OnEnable()
-    {
-        GameManager.OnStateChanged += HandleStateChanged;
-    }
+    private void OnEnable() => GameManager.OnStateChanged += HandleStateChanged;
+    private void OnDisable() => GameManager.OnStateChanged -= HandleStateChanged;
 
-    private void OnDisable()
-    {
-        GameManager.OnStateChanged -= HandleStateChanged;
-    }
-
-    // -------------------------------------------------------------------------
-    // FSM Event Handler
-    // -------------------------------------------------------------------------
     private void HandleStateChanged(GameManager.GameState newState)
     {
+        // Puntos de extensión para cambiar música automáticamente según el GameManager
         switch (newState)
         {
             case GameManager.GameState.MainMenu:
-                PlayMusicWithCrossfade(_mainMenuMusic);
+                FadeTensionStem(0f, 1f);
+                PlayBGM(_mainMenuMusicId);
                 break;
-
             case GameManager.GameState.Playing:
-                // Punto de extension: el WaveManager o el cargador de escena debe llamar a PlayBGM().
-                break;
-
-            case GameManager.GameState.Paused:
-                // Punto de extension: bajar volumen con un filtro low-pass o mantener el BGM actual.
-                break;
-
-            case GameManager.GameState.GameOver:
-                // Punto de extension: detener musica o transicionar a un track de derrota.
+                // Aquí el juego puede llamar a PlayMusicStems() si lo prefiere.
                 break;
         }
     }
 
     // -------------------------------------------------------------------------
-    // Public Playback API
+    // Public Playback API - MÚSICA Y STEMS
     // -------------------------------------------------------------------------
 
     /// <summary>
-    /// Reproduce una musica de fondo buscandola por su ID en el diccionario de BGM.
-    /// Usa crossfade suave para evitar cortes entre pistas.
+    /// Reproduce un track normal (sin stem de tensión).
     /// </summary>
     public void PlayBGM(string bgmId, float fadeDuration = 1f)
     {
-        if (!_bgmDict.TryGetValue(bgmId, out AudioClip clip))
+        if (!_bgmDict.TryGetValue(bgmId, out AudioClip clip)) return;
+        PlayMusicWithCrossfade(clip, null, fadeDuration);
+    }
+
+    /// <summary>
+    /// Reproduce dos tracks Sincronizados (Base y Tensión). 
+    /// El de tensión arranca mudo.
+    /// </summary>
+    public void PlayMusicStems(string baseId, string tensionId, float fadeDuration = 1f)
+    {
+        AudioClip baseClip = _bgmDict.ContainsKey(baseId) ? _bgmDict[baseId] : null;
+        AudioClip tensionClip = _bgmDict.ContainsKey(tensionId) ? _bgmDict[tensionId] : null;
+        
+        PlayMusicWithCrossfade(baseClip, tensionClip, fadeDuration);
+    }
+
+    /// <summary>
+    /// Desvanece el volumen del Stem de Tensión. 
+    /// Úsalo cuando queden 5 segundos o 2 jugadores.
+    /// </summary>
+    public void FadeTensionStem(float targetVolume, float duration = 1f)
+    {
+        if (_tensionFadeCoroutine != null) StopCoroutine(_tensionFadeCoroutine);
+        _tensionFadeCoroutine = StartCoroutine(FadeVolumeRoutine(_musicSourceTension, _musicSourceTension.volume, targetVolume, duration));
+    }
+
+    // -------------------------------------------------------------------------
+    // Public Playback API - AMBIENTE Y SFX
+    // -------------------------------------------------------------------------
+    
+    public void PlayAmbience(string ambId, float fadeDuration = 2f)
+    {
+        if (!_bgmDict.TryGetValue(ambId, out AudioClip clip)) return;
+        
+        _ambienceSource.clip = clip;
+        _ambienceSource.Play();
+        StartCoroutine(FadeVolumeRoutine(_ambienceSource, 0f, _ambienceTargetVolume, fadeDuration));
+    }
+
+    public void StopAmbience(float fadeDuration = 1f)
+    {
+        StartCoroutine(FadeVolumeRoutine(_ambienceSource, _ambienceSource.volume, 0f, fadeDuration));
+    }
+
+    /// <summary>
+    /// Reproduce un efecto de sonido buscando por ID. 
+    /// Aplica automáticamente el Pitch y Volumen configurado, o uno forzado (pitchOverride).
+    /// </summary>
+    public void PlaySFX(string sfxId, float? pitchOverride = null)
+    {
+        if (!_sfxDict.TryGetValue(sfxId, out SFXEntry entry))
         {
-            Debug.LogWarning($"[AudioManager] PlayBGM: No BGM registered with ID '{bgmId}'.");
+            Debug.LogWarning($"[AudioManager] SFX '{sfxId}' no encontrado.");
             return;
         }
 
-        PlayMusicWithCrossfade(clip, fadeDuration);
-    }
+        float vol = entry.volume > 0f ? entry.volume : 1f;
 
-    /// <summary>
-    /// Desvanece y detiene la musica actual con una transicion suave.
-    /// </summary>
-    public void StopBGM(float fadeDuration = 1f)
-    {
-        if (_fadeCoroutine != null)
-            StopCoroutine(_fadeCoroutine);
-
-        _fadeCoroutine = StartCoroutine(FadeOutAndStop(fadeDuration));
-    }
-
-    /// <summary>
-    /// Reproduce un efecto de sonido (OneShot) buscandolo por ID. Permite solapamiento de instancias.
-    /// </summary>
-    public void PlaySFX(string sfxId)
-    {
-        if (_sfxDict.TryGetValue(sfxId, out AudioClip clip))
+        if (pitchOverride.HasValue || entry.randomizePitch)
         {
-            _sfxSource.PlayOneShot(clip);
+            // Usar Object Pool para no ensuciar el Pitch del canal principal
+            AudioSource src = GetSFXPoolSource();
+            src.pitch = pitchOverride.HasValue ? pitchOverride.Value : UnityEngine.Random.Range(0.85f, 1.15f);
+            src.volume = vol;
+            src.PlayOneShot(entry.clip);
         }
         else
         {
-            Debug.LogWarning($"[AudioManager] PlaySFX: No SFX registered with ID '{sfxId}'.");
+            _sfxSource.pitch = 1f; // Asegurar pitch normal
+            _sfxSource.PlayOneShot(entry.clip, vol);
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Public Options API (UI Slider mapping)
-    // -------------------------------------------------------------------------
-    public void SetMasterVolume(float linearValue)
+    /// <summary>
+    /// Permite a otros scripts obtener un clip y sus ajustes desde la librería central
+    /// (Ideal para reproducir sonidos que necesitan cortarse, como el riel de pesca).
+    /// </summary>
+    public bool TryGetSFXEntry(string sfxId, out SFXEntry entry)
     {
-        ApplyVolume(MIXER_PARAM_MASTER, PREF_KEY_MASTER, linearValue);
+        return _sfxDict.TryGetValue(sfxId, out entry);
     }
 
-    public void SetMusicVolume(float linearValue)
+    private AudioSource GetSFXPoolSource()
     {
-        ApplyVolume(MIXER_PARAM_MUSIC, PREF_KEY_MUSIC, linearValue);
-    }
-
-    public void SetSFXVolume(float linearValue)
-    {
-        ApplyVolume(MIXER_PARAM_SFX, PREF_KEY_SFX, linearValue);
+        AudioSource src = _sfxPool.Dequeue();
+        _sfxPool.Enqueue(src); // Lo mandamos al fondo de la cola
+        return src;
     }
 
     // -------------------------------------------------------------------------
-    // Private Transition and Interpolation Logic
+    // Opciones de Volumen
     // -------------------------------------------------------------------------
-    private void PlayMusicWithCrossfade(AudioClip clip, float fadeDuration = 1f)
+    public void SetMasterVolume(float linearValue) => ApplyVolume(MIXER_PARAM_MASTER, PREF_KEY_MASTER, linearValue);
+    public void SetMusicVolume(float linearValue)  => ApplyVolume(MIXER_PARAM_MUSIC, PREF_KEY_MUSIC, linearValue);
+    public void SetSFXVolume(float linearValue)    => ApplyVolume(MIXER_PARAM_SFX, PREF_KEY_SFX, linearValue);
+
+    private void ApplyVolume(string mixerParam, string prefsKey, float linearValue)
     {
-        if (_musicSource.clip == clip && _musicSource.isPlaying)
-            return;
+        linearValue = Mathf.Clamp(linearValue, 0.0001f, 1f);
+        float dB = Mathf.Log10(linearValue) * 20f;
+        if (_mainMixer != null)
+            _mainMixer.SetFloat(mixerParam, dB);
+        PlayerPrefs.SetFloat(prefsKey, linearValue);
+    }
 
-        if (_fadeCoroutine != null)
-            StopCoroutine(_fadeCoroutine);
+    private void LoadSavedVolumePreferences()
+    {
+        SetMasterVolume(PlayerPrefs.GetFloat(PREF_KEY_MASTER, DEFAULT_VOLUME));
+        SetMusicVolume(PlayerPrefs.GetFloat(PREF_KEY_MUSIC, DEFAULT_VOLUME));
+        SetSFXVolume(PlayerPrefs.GetFloat(PREF_KEY_SFX, DEFAULT_VOLUME));
+    }
 
-        if (clip == null)
-        {
+    // -------------------------------------------------------------------------
+    // Corrutinas y Helpers Internos
+    // -------------------------------------------------------------------------
+    private void PlayMusicWithCrossfade(AudioClip baseClip, AudioClip tensionClip, float fadeDuration = 1f)
+    {
+        if (_musicSourceBase.clip == baseClip && _musicSourceBase.isPlaying) return;
+
+        if (_fadeCoroutine != null) StopCoroutine(_fadeCoroutine);
+
+        if (baseClip == null)
             _fadeCoroutine = StartCoroutine(FadeOutAndStop(fadeDuration));
-        }
-        else if (!_musicSource.isPlaying)
-        {
-            _fadeCoroutine = StartCoroutine(FadeIn(clip, fadeDuration));
-        }
+        else if (!_musicSourceBase.isPlaying)
+            _fadeCoroutine = StartCoroutine(FadeIn(baseClip, tensionClip, fadeDuration));
         else
-        {
-            _fadeCoroutine = StartCoroutine(Crossfade(clip, fadeDuration));
-        }
+            _fadeCoroutine = StartCoroutine(Crossfade(baseClip, tensionClip, fadeDuration));
     }
 
-    private IEnumerator Crossfade(AudioClip nextClip, float fadeDuration)
+    private IEnumerator Crossfade(AudioClip baseClip, AudioClip tensionClip, float duration)
     {
-        yield return StartCoroutine(FadeVolume(_musicSource.volume, 0f, fadeDuration));
+        // Apagar lo actual
+        yield return StartCoroutine(FadeVolumeRoutine(_musicSourceBase, _musicSourceBase.volume, 0f, duration));
+        
+        _musicSourceBase.clip = baseClip;
+        _musicSourceTension.clip = tensionClip;
+        
+        _musicSourceBase.Play();
+        if (tensionClip != null) _musicSourceTension.Play();
 
-        _musicSource.clip = nextClip;
-        _musicSource.Play();
-
-        yield return StartCoroutine(FadeVolume(0f, _musicTargetVolume, fadeDuration));
-        _fadeCoroutine = null;
+        // Subir base, dejar tensión en 0
+        yield return StartCoroutine(FadeVolumeRoutine(_musicSourceBase, 0f, _musicTargetVolume, duration));
     }
 
-    private IEnumerator FadeIn(AudioClip clip, float fadeDuration)
+    private IEnumerator FadeIn(AudioClip baseClip, AudioClip tensionClip, float duration)
     {
-        _musicSource.clip = clip;
-        _musicSource.volume = 0f;
-        _musicSource.Play();
+        _musicSourceBase.clip = baseClip;
+        _musicSourceTension.clip = tensionClip;
+        
+        _musicSourceBase.volume = 0f;
+        _musicSourceTension.volume = 0f;
+        
+        _musicSourceBase.Play();
+        if (tensionClip != null) _musicSourceTension.Play();
 
-        yield return StartCoroutine(FadeVolume(0f, _musicTargetVolume, fadeDuration));
-        _fadeCoroutine = null;
+        yield return StartCoroutine(FadeVolumeRoutine(_musicSourceBase, 0f, _musicTargetVolume, duration));
     }
 
-    private IEnumerator FadeOutAndStop(float fadeDuration)
+    private IEnumerator FadeOutAndStop(float duration)
     {
-        yield return StartCoroutine(FadeVolume(_musicSource.volume, 0f, fadeDuration));
-
-        _musicSource.Stop();
-        _musicSource.clip = null;
-        _fadeCoroutine = null;
+        yield return StartCoroutine(FadeVolumeRoutine(_musicSourceBase, _musicSourceBase.volume, 0f, duration));
+        _musicSourceBase.Stop();
+        _musicSourceTension.Stop();
     }
 
-    private IEnumerator FadeVolume(float fromVolume, float toVolume, float duration)
+    private IEnumerator FadeVolumeRoutine(AudioSource source, float startVol, float endVol, float duration)
     {
         if (duration <= 0f)
         {
-            _musicSource.volume = toVolume;
+            source.volume = endVol;
             yield break;
         }
 
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            // unscaledDeltaTime ensures fades work correctly even when Time.timeScale is 0 (Pause screen).
             elapsed += Time.unscaledDeltaTime;
-            _musicSource.volume = Mathf.Lerp(fromVolume, toVolume, elapsed / duration);
+            source.volume = Mathf.Lerp(startVol, endVol, elapsed / duration);
             yield return null;
         }
-        _musicSource.volume = toVolume;
+        source.volume = endVol;
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers and Initialisation
-    // -------------------------------------------------------------------------
     private AudioSource CreateAudioSource(string sourceName, AudioMixerGroup mixerGroup, bool loop)
     {
         GameObject child = new GameObject(sourceName);
         child.transform.SetParent(transform);
-
         AudioSource source = child.AddComponent<AudioSource>();
         source.outputAudioMixerGroup = mixerGroup;
         source.loop = loop;
         source.playOnAwake = false;
-
         return source;
     }
 
     private void BuildLookupDictionaries()
     {
-        _sfxDict = new Dictionary<string, AudioClip>(_sfxLibrary.Count);
+        _sfxDict = new Dictionary<string, SFXEntry>(_sfxLibrary.Count);
         foreach (SFXEntry entry in _sfxLibrary)
         {
-            if (!string.IsNullOrEmpty(entry.id)) _sfxDict[entry.id] = entry.clip;
+            // Setear volumen default por código si se olvidan de tocar el slider
+            SFXEntry e = entry;
+            if (e.volume <= 0f) e.volume = 1f; 
+            if (!string.IsNullOrEmpty(e.id)) _sfxDict[e.id] = e;
         }
 
         _bgmDict = new Dictionary<string, AudioClip>(_bgmLibrary.Count);
@@ -321,29 +381,5 @@ public class AudioManager : MonoBehaviour
         {
             if (!string.IsNullOrEmpty(entry.id)) _bgmDict[entry.id] = entry.clip;
         }
-    }
-
-    private void ApplyVolume(string mixerParam, string prefsKey, float linearValue)
-    {
-        linearValue = Mathf.Clamp(linearValue, 0.0001f, 1f);
-        float dB = Mathf.Log10(linearValue) * 20f;
-
-        if (_musicMixerGroup != null && _musicMixerGroup.audioMixer != null)
-        {
-            _musicMixerGroup.audioMixer.SetFloat(mixerParam, dB);
-        }
-
-        PlayerPrefs.SetFloat(prefsKey, linearValue);
-    }
-
-    private void LoadSavedVolumePreferences()
-    {
-        float master = PlayerPrefs.GetFloat(PREF_KEY_MASTER, DEFAULT_VOLUME);
-        float music  = PlayerPrefs.GetFloat(PREF_KEY_MUSIC,  DEFAULT_VOLUME);
-        float sfx    = PlayerPrefs.GetFloat(PREF_KEY_SFX,    DEFAULT_VOLUME);
-
-        ApplyVolume(MIXER_PARAM_MASTER, PREF_KEY_MASTER, master);
-        ApplyVolume(MIXER_PARAM_MUSIC,  PREF_KEY_MUSIC,  music);
-        ApplyVolume(MIXER_PARAM_SFX,    PREF_KEY_SFX,    sfx);
     }
 }
