@@ -17,7 +17,8 @@ public class PlayerController : MonoBehaviour
     public SkillCheck CurrentSkillCheck { get; private set; }
 
     [Header("UI & Feedback")]
-    [SerializeField] private SpriteRenderer _playerVisualRenderer; // SPRITE DEL JUGADOR (HIJO)
+    [Tooltip("El objeto PADRE que contiene todas las partes visuales del jugador (bote, brazos, cabeza).")]
+    [SerializeField] private Transform _playerVisualRoot; 
     [SerializeField] private SpriteRenderer _feedbackSpriteRenderer;
     [SerializeField] private SpriteRenderer _feedbackOutlineRenderer; // OUTLINE DEL FEEDBACK
     [SerializeField] private Sprite _caughtSprite;
@@ -85,15 +86,23 @@ public class PlayerController : MonoBehaviour
             }
         }
         
-        if (_playerVisualRenderer != null)
+        if (_playerVisualRoot != null)
         {
-            _playerVisualRenderer.color = color;
-            // Invertir el sprite si está a la derecha
-            _playerVisualRenderer.flipX = faceLeft;
+            // Teñir todos los SpriteRenderers hijos (cabeza, bote, etc)
+            SpriteRenderer[] childSprites = _playerVisualRoot.GetComponentsInChildren<SpriteRenderer>(true);
+            foreach (var sr in childSprites)
+            {
+                sr.color = color;
+            }
+
+            // Invertir el objeto padre entero si mira hacia la izquierda
+            Vector3 scale = _playerVisualRoot.localScale;
+            scale.x = faceLeft ? -Mathf.Abs(scale.x) : Mathf.Abs(scale.x);
+            _playerVisualRoot.localScale = scale;
         }
         else
         {
-            Debug.LogWarning($"[PlayerController] {_playerVisualRenderer} no está asignado en {gameObject.name}");
+            Debug.LogWarning($"[PlayerController] _playerVisualRoot no está asignado en {gameObject.name}");
         }
 
         // Si el jugador debe mirar a la izquierda, invertimos la Posición X de los objetos asimétricos
@@ -167,12 +176,11 @@ public class PlayerController : MonoBehaviour
             }
 
             // Tensión visual (vibración) mientras pesca
-            if (_playerVisualRenderer != null)
+            if (_playerVisualRoot != null)
             {
-                Transform vis = _playerVisualRenderer.transform;
                 // Vibración suave de base, vibración fuerte si está presionando/tirando
                 float shakeForce = _fishAction.IsPressed() ? 0.06f : 0.015f; 
-                vis.localPosition = new Vector3(
+                _playerVisualRoot.localPosition = new Vector3(
                     UnityEngine.Random.Range(-shakeForce, shakeForce),
                     UnityEngine.Random.Range(-shakeForce, shakeForce),
                     0f
@@ -195,9 +203,9 @@ public class PlayerController : MonoBehaviour
         else
         {
             // Restablecer posición si no está pescando ni en eliminación
-            if (_playerVisualRenderer != null && gameObject.activeSelf && _squashRoutine == null)
+            if (_playerVisualRoot != null && gameObject.activeSelf && _squashRoutine == null)
             {
-                _playerVisualRenderer.transform.localPosition = Vector3.Lerp(_playerVisualRenderer.transform.localPosition, Vector3.zero, Time.deltaTime * 10f);
+                _playerVisualRoot.localPosition = Vector3.Lerp(_playerVisualRoot.localPosition, Vector3.zero, Time.deltaTime * 10f);
             }
             
             if (_bobberVisual != null && gameObject.activeSelf)
@@ -220,13 +228,13 @@ public class PlayerController : MonoBehaviour
     private Coroutine _squashRoutine;
     private void DoSquashAndStretch()
     {
-        if (_playerVisualRenderer == null) return;
+        if (_playerVisualRoot == null) return;
         
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Player_InputPress");
 
         if (!_hasSavedBaseScale)
         {
-            _baseVisualScale = _playerVisualRenderer.transform.localScale;
+            _baseVisualScale = _playerVisualRoot.localScale;
             _hasSavedBaseScale = true;
         }
 
@@ -236,7 +244,7 @@ public class PlayerController : MonoBehaviour
 
     private System.Collections.IEnumerator SquashRoutine()
     {
-        Transform vis = _playerVisualRenderer.transform;
+        Transform vis = _playerVisualRoot;
         
         float baseScaleX = _baseVisualScale.x;
         float baseScaleY = _baseVisualScale.y;
@@ -402,14 +410,14 @@ public class PlayerController : MonoBehaviour
             AudioManager.Instance.PlaySFX("Monster_Drag");
         }
         
-        StartCoroutine(DragDownRoutine());
+        StartCoroutine(EliminateRoutine());
     }
 
-    private System.Collections.IEnumerator DragDownRoutine()
+    private System.Collections.IEnumerator EliminateRoutine()
     {
-        if (_playerVisualRenderer == null) yield break;
-        
-        Transform vis = _playerVisualRenderer.transform;
+        if (_playerVisualRoot == null) yield break;
+
+        Transform vis = _playerVisualRoot;
         Vector3 startPos = vis.localPosition;
         Vector3 targetPos = startPos + Vector3.down * 3f; // Jalado hacia abajo
         
