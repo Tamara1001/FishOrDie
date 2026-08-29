@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Fish3
   m_EditorClassIdentifier: Assembly-CSharp::FishData
   fishName: Dorado
-  fishSprite: {fileID: 21300000, guid: 2be4787bde6aecc4f93f20c4f7ffb3f0, type: 3}
+  fishSprite: {fileID: 21300000, guid: 26253d5a150db1e4f9aab9ab4d5b1d5c, type: 3}
   catchDifficulty: 0.9
   minSizeCm: 50
   maxSizeCm: 100

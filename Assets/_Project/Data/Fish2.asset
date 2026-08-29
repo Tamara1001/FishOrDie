@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Fish2
   m_EditorClassIdentifier: Assembly-CSharp::FishData
   fishName: Vieja del Agua
-  fishSprite: {fileID: 21300000, guid: 0dadf01aeb138ec4d8d28743ab8c678c, type: 3}
+  fishSprite: {fileID: 2118739539079310105, guid: f5f0578acf9201a43a5b6930f40d3104, type: 3}
   catchDifficulty: 0.5
   minSizeCm: 30
   maxSizeCm: 60

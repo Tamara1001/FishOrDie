@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Fish1
   m_EditorClassIdentifier: Assembly-CSharp::FishData
   fishName: Mojarrita
-  fishSprite: {fileID: 21300000, guid: 480cc8e069a871f4cbf8f998fc82c2b1, type: 3}
+  fishSprite: {fileID: 21300000, guid: ccedcd3afefec0f419a534ed04b908c7, type: 3}
   catchDifficulty: 0.1
   minSizeCm: 5
   maxSizeCm: 15
