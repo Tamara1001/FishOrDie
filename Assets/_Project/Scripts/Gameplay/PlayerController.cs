@@ -13,6 +13,8 @@ public class PlayerController : MonoBehaviour
     public int CurrentScore { get; private set; }
     public Color PlayerColor { get; private set; }
     public bool IsFacingLeft { get; private set; }
+    
+    public bool IsPulling => _fishAction != null && _fishAction.IsPressed();
 
     public SkillCheck CurrentSkillCheck { get; private set; }
 
