@@ -82,8 +82,11 @@ public class FishVisual : MonoBehaviour
         {
             if (_pauseTimer == 0f && _targetPlayer != null)
             {
-                // Primer frame de pausa: ¡Avisar a la boya!
-                _targetPlayer.TriggerBobberAlert();
+                // Primer frame de pausa: ¡Avisar a la boya! (si el jugador no fue eliminado)
+                if (_targetPlayer.gameObject.activeInHierarchy)
+                {
+                    _targetPlayer.TriggerBobberAlert();
+                }
             }
 
             _pauseTimer += Time.deltaTime;

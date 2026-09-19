@@ -11,10 +11,73 @@ public class UI_LobbyMenu : MonoBehaviour
     [Tooltip("Arrastrar acá las 6 filas de configuración creadas en la UI del LOBBY")]
     [SerializeField] private UI_PlayerConfigSlot[] _lobbySlots;
 
+    [Header("Game Settings")]
+    [Tooltip("Min: 0 (Fácil), Max: 2 (Difícil)")]
+    [SerializeField] private UnityEngine.UI.Slider _difficultySlider;
+    [SerializeField] private TMPro.TMP_Text _difficultyLabel;
+
+    [Tooltip("Min: 0 (Poco), Max: 2 (Mucho)")]
+    [SerializeField] private UnityEngine.UI.Slider _fishAmountSlider;
+    [SerializeField] private TMPro.TMP_Text _fishAmountLabel;
+
     private void OnEnable()
     {
-        // Al encender el panel del Lobby, refrescamos visualmente los que ya estaban activos
+        MatchSettings.Load();
+
+        if (_difficultySlider != null)
+        {
+            _difficultySlider.onValueChanged.RemoveListener(OnDifficultyChanged);
+            _difficultySlider.value = (int)MatchSettings.CurrentDifficulty;
+            UpdateDifficultyLabel((int)MatchSettings.CurrentDifficulty);
+            _difficultySlider.onValueChanged.AddListener(OnDifficultyChanged);
+        }
+
+        if (_fishAmountSlider != null)
+        {
+            _fishAmountSlider.onValueChanged.RemoveListener(OnFishAmountChanged);
+            _fishAmountSlider.value = (int)MatchSettings.CurrentFishAmount;
+            UpdateFishAmountLabel((int)MatchSettings.CurrentFishAmount);
+            _fishAmountSlider.onValueChanged.AddListener(OnFishAmountChanged);
+        }
+
         RefreshLobbySlots();
+    }
+
+    private void OnDisable()
+    {
+        MatchSettings.Save();
+        if (_difficultySlider != null) _difficultySlider.onValueChanged.RemoveListener(OnDifficultyChanged);
+        if (_fishAmountSlider != null) _fishAmountSlider.onValueChanged.RemoveListener(OnFishAmountChanged);
+    }
+
+    private void OnDifficultyChanged(float val)
+    {
+        int difficultyInt = Mathf.RoundToInt(val);
+        MatchSettings.CurrentDifficulty = (MatchSettings.GameDifficulty)difficultyInt;
+        UpdateDifficultyLabel(difficultyInt);
+        MatchSettings.Save();
+    }
+
+    private void UpdateDifficultyLabel(int val)
+    {
+        if (_difficultyLabel == null) return;
+        string[] labels = { "FÁCIL", "NORMAL", "DIFÍCIL" };
+        _difficultyLabel.text = $"DIFICULTAD: {labels[Mathf.Clamp(val, 0, 2)]}";
+    }
+
+    private void OnFishAmountChanged(float val)
+    {
+        int amountInt = Mathf.RoundToInt(val);
+        MatchSettings.CurrentFishAmount = (MatchSettings.FishAmount)amountInt;
+        UpdateFishAmountLabel(amountInt);
+        MatchSettings.Save();
+    }
+
+    private void UpdateFishAmountLabel(int val)
+    {
+        if (_fishAmountLabel == null) return;
+        string[] labels = { "POCOS", "NORMAL", "MUCHOS" };
+        _fishAmountLabel.text = $"PECES: {labels[Mathf.Clamp(val, 0, 2)]}";
     }
 
     private void Update()
@@ -94,5 +157,17 @@ public class UI_LobbyMenu : MonoBehaviour
                 _lobbySlots[i].Initialize(i);
             }
         }
+    }
+
+    public void OnRemoveAllPlayersClicked()
+    {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Cancel");
+        
+        for (int i = 0; i < MatchSettings.MAX_PLAYERS; i++)
+        {
+            MatchSettings.PlayerActive[i] = false;
+        }
+        
+        RefreshLobbySlots();
     }
 }

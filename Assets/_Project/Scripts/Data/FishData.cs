@@ -19,10 +19,10 @@ public class FishData : ScriptableObject
     public int maxSizeCm = 50;
 
     [Tooltip("Peso mínimo en KG")]
-    public int minWeightKg = 1;
+    public float minWeightKg = 1f;
     [Tooltip("Peso máximo en KG")]
-    public int maxWeightKg = 5;
+    public float maxWeightKg = 5f;
 
-    [Tooltip("Precio (Score) por Kg de este pez")]
-    public int valuePerKg = 10;
+    [Tooltip("Valor en dinero por cada KG de peso")]
+    public float valuePerKg = 10f;
 }

@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae02968f817348c41a565cae0a99fbb2, type: 3}
-  m_Name: Fish1
+  m_Name: Fish1_Mojarrita
   m_EditorClassIdentifier: Assembly-CSharp::FishData
   fishName: Mojarrita
   fishSprite: {fileID: 21300000, guid: ccedcd3afefec0f419a534ed04b908c7, type: 3}

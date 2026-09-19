@@ -64,13 +64,26 @@ public class RiverSpawner : MonoBehaviour
     {
         while (true)
         {
-            yield return new WaitForSeconds(Random.Range(_minSpawnDelay, _maxSpawnDelay));
+            float delay = Random.Range(_minSpawnDelay, _maxSpawnDelay);
+            
+            // Multiplicador por cantidad de jugadores (más jugadores = menos delay = más peces)
+            int players = (_activePlayers != null && _activePlayers.Count > 0) ? _activePlayers.Count : 2;
+            float playerMultiplier = Mathf.Clamp((float)players / 2f, 0.5f, 3f); // Relativo a 2 jugadores
+            delay /= playerMultiplier;
+
+            // Multiplicador por cantidad de peces (Configuración global)
+            if (MatchSettings.CurrentFishAmount == MatchSettings.FishAmount.Poco) delay *= 1.5f;
+            else if (MatchSettings.CurrentFishAmount == MatchSettings.FishAmount.Mucho) delay *= 0.6f;
+
+            yield return new WaitForSeconds(delay);
 
             if (_fishPrefab == null || _currentPool == null || _currentPool.Length == 0) 
                 continue;
 
             // Pickeamos tipo de pez al azar del pool de este nivel
             FishData randomFish = _currentPool[Random.Range(0, _currentPool.Length)];
+            if (randomFish == null) continue; // Protección extra contra assets corruptos
+
             
             // Elegir un jugador objetivo al azar para que el pez salga a la superficie frente a él
             PlayerController targetPlayer = null;

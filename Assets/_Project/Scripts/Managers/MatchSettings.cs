@@ -53,11 +53,20 @@ public static class MatchSettings
     
     public static string[] PlayerBindings = { "<Keyboard>/a", "<Keyboard>/s", "<Keyboard>/d", "<Keyboard>/f", "<Keyboard>/g", "<Keyboard>/h" };
 
+    public enum GameDifficulty { Facil, Normal, Dificil }
+    public static GameDifficulty CurrentDifficulty = GameDifficulty.Normal;
+
+    public enum FishAmount { Poco, Normal, Mucho }
+    public static FishAmount CurrentFishAmount = FishAmount.Normal;
+
     private static bool _isLoaded = false;
 
     public static void Load()
     {
         if (_isLoaded) return;
+
+        CurrentDifficulty = (GameDifficulty)PlayerPrefs.GetInt("MS_Difficulty", (int)GameDifficulty.Normal);
+        CurrentFishAmount = (FishAmount)PlayerPrefs.GetInt("MS_FishAmount", (int)FishAmount.Normal);
 
         for (int i = 0; i < MAX_PLAYERS; i++)
         {
@@ -88,6 +97,8 @@ public static class MatchSettings
             PlayerPrefs.SetString($"MS_Color_{i}", "#" + ColorUtility.ToHtmlStringRGBA(PlayerColors[i]));
         }
 
+        PlayerPrefs.SetInt("MS_Difficulty", (int)CurrentDifficulty);
+        PlayerPrefs.SetInt("MS_FishAmount", (int)CurrentFishAmount);
         PlayerPrefs.Save();
     }
 

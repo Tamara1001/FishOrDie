@@ -170,7 +170,7 @@ public class PlayerHUDSlot : MonoBehaviour
 
     private Coroutine _catchBannerRoutine;
     
-    public void ShowCatchBanner(string fishName, int size, int weight, int score)
+    public void ShowCatchBanner(string fishName, int size, float weight, int score)
     {
         if (_catchBannerText == null) return;
         
@@ -178,9 +178,17 @@ public class PlayerHUDSlot : MonoBehaviour
         _catchBannerRoutine = StartCoroutine(CatchBannerRoutine(fishName, size, weight, score));
     }
 
-    private System.Collections.IEnumerator CatchBannerRoutine(string fishName, int size, int weight, int score)
+    private System.Collections.IEnumerator CatchBannerRoutine(string fishName, int size, float weight, int score)
     {
-        _catchBannerText.text = $"{fishName}\n{size}cm - {weight}kg\n<color=#FFD700>+${score}</color>";
+        if (score < 0)
+        {
+            _catchBannerText.text = $"{fishName}\n<color=#FF4444>-${Mathf.Abs(score)}</color>";
+        }
+        else
+        {
+            string weightStr = weight < 1f ? $"{Mathf.RoundToInt(weight * 1000f)}g" : $"{weight:F1}kg";
+            _catchBannerText.text = $"{fishName}\n{size}cm - {weightStr}\n<color=#FFD700>+${score}</color>";
+        }
         
         // Manejamos el fade usando CanvasGroup si está asignado, sino solo el texto
         if (_catchBannerGroup != null)

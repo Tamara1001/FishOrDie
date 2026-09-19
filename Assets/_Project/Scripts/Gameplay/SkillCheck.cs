@@ -52,11 +52,16 @@ public class SkillCheck
 
         float d = fishData != null ? Mathf.Clamp01(fishData.catchDifficulty) : 0.3f;
 
-        BarSize      = Mathf.Lerp(0.50f, 0.25f, d); // Barra más grande
-        _fishSpeed   = Mathf.Lerp(0.20f, 0.80f, d); // Pez un poco más lento
+        if (MatchSettings.CurrentDifficulty == MatchSettings.GameDifficulty.Facil) d *= 0.6f;
+        else if (MatchSettings.CurrentDifficulty == MatchSettings.GameDifficulty.Dificil) d *= 1.4f;
+        
+        d = Mathf.Clamp01(d);
+
+        BarSize      = Mathf.Lerp(0.50f, 0.25f, d); // Barra más grande/chica
+        _fishSpeed   = Mathf.Lerp(0.20f, 0.80f, d); // Pez un poco más lento/rápido
         _fishChaos   = Mathf.Lerp(1.00f, 4.00f, d);
-        _fillRate    = Mathf.Lerp(0.60f, 0.40f, d); // Se llena más rápido
-        _drainRate   = Mathf.Lerp(0.20f, 0.40f, d); // Se vacía más lento
+        _fillRate    = Mathf.Lerp(0.60f, 0.40f, d); // Se llena más rápido/lento
+        _drainRate   = Mathf.Lerp(0.20f, 0.40f, d); // Se vacía más lento/rápido
         _maxDuration = 12f;
 
         FishPosition   = 0.5f;

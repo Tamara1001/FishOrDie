@@ -420,34 +420,84 @@ public class PlayerController : MonoBehaviour
         if (_playerVisualRoot == null) yield break;
 
         Transform vis = _playerVisualRoot;
-        Vector3 startPos = vis.localPosition;
-        Vector3 targetPos = startPos + Vector3.down * 3f; // Jalado hacia abajo
-        
-        float duration = 0.5f;
+        Vector3 startPos = vis.position;
+
+        // 1. Instanciar al monstruo
+        Sprite monsterSprite = Resources.Load<Sprite>("Monstruo");
+        GameObject monsterObj = null;
+        if (monsterSprite != null)
+        {
+            monsterObj = new GameObject("Monstruo");
+            SpriteRenderer sr = monsterObj.AddComponent<SpriteRenderer>();
+            sr.sprite = monsterSprite;
+            sr.sortingOrder = 50; // Por encima del jugador
+
+            Vector3 monsterStart = startPos + Vector3.down * 6f; // Un poco más profundo al empezar
+            Vector3 monsterCatch = startPos + Vector3.down * 1.8f; // Sube menos para que no se le vea la base cortada
+            monsterObj.transform.position = monsterStart;
+            Vector3 baseScale = Vector3.one * 1.5f;
+            monsterObj.transform.localScale = baseScale;
+
+            // Subir a agarrar (Stretch vertical)
+            float t = 0;
+            while (t < 1f)
+            {
+                t += Time.deltaTime * 2.5f;
+                float smooth = Mathf.SmoothStep(0, 1, t);
+                monsterObj.transform.position = Vector3.Lerp(monsterStart, monsterCatch, smooth);
+                
+                float stretchY = Mathf.Lerp(1f, 1.4f, Mathf.Sin(t * Mathf.PI));
+                float stretchX = Mathf.Lerp(1f, 0.7f, Mathf.Sin(t * Mathf.PI));
+                monsterObj.transform.localScale = new Vector3(baseScale.x * stretchX, baseScale.y * stretchY, baseScale.z);
+                
+                yield return null;
+            }
+            monsterObj.transform.localScale = baseScale;
+
+            // Pausa dramática (Squash de anticipación)
+            t = 0;
+            while (t < 1f)
+            {
+                t += Time.deltaTime * 2f; // 0.5s en total
+                float squashY = Mathf.Lerp(1f, 0.8f, Mathf.Sin(t * Mathf.PI));
+                float squashX = Mathf.Lerp(1f, 1.25f, Mathf.Sin(t * Mathf.PI));
+                monsterObj.transform.localScale = new Vector3(baseScale.x * squashX, baseScale.y * squashY, baseScale.z);
+                yield return null;
+            }
+        }
+
+        // 2. Hundir a ambos
+        Vector3 finalPos = startPos + Vector3.down * 3f;
+        float duration = 0.8f;
         float elapsed = 0f;
+        Vector3 baseScaleM = Vector3.one * 1.5f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
-
-            // Curva acelerada (ease in) para dar sensación de fuerza
-            float easeIn = t * t * t;
+            float easeIn = t * t * t; // Curva acelerada
             
-            vis.localPosition = Vector3.Lerp(startPos, targetPos, easeIn);
+            Vector3 currentPos = Vector3.Lerp(startPos, finalPos, easeIn);
+            vis.position = currentPos;
             
-            // Giro violento
+            if (monsterObj != null)
+            {
+                monsterObj.transform.position = currentPos + Vector3.down * 0.5f;
+                // Stretch exagerado mientras jala hacia abajo
+                monsterObj.transform.localScale = new Vector3(baseScaleM.x * 0.6f, baseScaleM.y * 1.5f, baseScaleM.z);
+            }
+            
+            // Giro violento de la barca
             vis.Rotate(Vector3.forward, 720f * Time.deltaTime);
-
-            // Escalar un poquito hacia cero simulando perspectiva
             vis.localScale = Vector3.Lerp(vis.localScale, Vector3.zero, easeIn * 0.1f);
 
             yield return null;
         }
 
+        if (monsterObj != null) Destroy(monsterObj);
         gameObject.SetActive(false);
     }
-
     // -------------------------------------------------------------------------
     // Lógica de la Boya
     // -------------------------------------------------------------------------

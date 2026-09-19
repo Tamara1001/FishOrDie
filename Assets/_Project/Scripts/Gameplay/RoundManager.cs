@@ -23,7 +23,7 @@ public class RoundManager : MonoBehaviour
     public static event Action<float> OnTimerTick;
     public static event Action<PlayerController> OnPlayerEliminated;
     public static event Action<PlayerController, int> OnScoreAdded;
-    public static event Action<PlayerController, string, int, int, int> OnFishCatchDetails;
+    public static event Action<PlayerController, string, int, float, int> OnFishCatchDetails;
     public static event Action OnRoundReset;
     public static event Action<PlayerController> OnVictoryEvent;
 
@@ -46,6 +46,19 @@ public class RoundManager : MonoBehaviour
     private void Awake()
     {
         CurrentRoundNumber = 1;
+        
+        // Carga automática de todos los peces y basura desde la carpeta Resources/Fish
+        FishData[] loadedFishes = Resources.LoadAll<FishData>("Fish");
+        if (loadedFishes != null && loadedFishes.Length > 0)
+        {
+            _fishPool = loadedFishes;
+            Debug.Log($"[RoundManager] Se cargaron {_fishPool.Length} peces/basura desde Resources.");
+        }
+        else if (_fishPool == null || _fishPool.Length == 0)
+        {
+            Debug.LogWarning("[RoundManager] No hay peces en la pool ni en Resources/Fish.");
+        }
+
         GameManager.OnStateChanged += OnGameStateChanged;
     }
 
@@ -168,6 +181,7 @@ public class RoundManager : MonoBehaviour
         }
 
         // Momento de tensión visual (mostrar quién fue devorado)
+        // La animación la maneja el PlayerController internamente ahora
         yield return new WaitForSeconds(3f);
 
         // Fade a negro antes de cambiar la pantalla
@@ -254,12 +268,25 @@ public class RoundManager : MonoBehaviour
             _riverSpawner.ActiveFishes.Remove(hookedFish);
             hookedFish.Hook();
             
-            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Fish_Alert");
-            player.StartSkillCheck(data);
+            if (data.valuePerKg < 0)
+            {
+                // Es basura: pesca automática sin skill check y resta puntos fijos
+                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Cancel"); // Sonido negativo
+                
+                int trashPenalty = Mathf.RoundToInt(data.valuePerKg);
+                player.AddScore(trashPenalty);
+                OnScoreAdded?.Invoke(player, trashPenalty);
+                OnFishCatchDetails?.Invoke(player, data.fishName, 0, 0f, trashPenalty);
+            }
+            else
+            {
+                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Fish_Alert");
+                player.StartSkillCheck(data);
+            }
         }
         else
         {
-            // El jugador apretó pero no había pez en la superficie en su carril
+            // El jugador apretó pero no había pez
         }
     }
 
@@ -272,12 +299,12 @@ public class RoundManager : MonoBehaviour
         
         // Regla de 3 para sacar el peso proporcional al tamaño
         float t = Mathf.InverseLerp(fish.minSizeCm, fish.maxSizeCm, size);
-        int weight = Mathf.RoundToInt(Mathf.Lerp(fish.minWeightKg, fish.maxWeightKg, t));
+        float weight = Mathf.Lerp(fish.minWeightKg, fish.maxWeightKg, t);
         
         // Multiplicador de dinero
-        int scoreToAdd = weight * fish.valuePerKg;
+        int scoreToAdd = Mathf.RoundToInt(weight * fish.valuePerKg);
         // Evitar que valga 0 por si es muy chiquito
-        if (scoreToAdd <= 0) scoreToAdd = 1;
+        if (scoreToAdd <= 0 && fish.valuePerKg > 0) scoreToAdd = 1;
 
         string fishName = fish.fishName;
 
@@ -287,7 +314,7 @@ public class RoundManager : MonoBehaviour
         // Disparar cartel detallado para que lo agarre la UI
         OnFishCatchDetails?.Invoke(player, fishName, size, weight, scoreToAdd);
 
-        Debug.Log($"[RoundManager] {player.gameObject.name} pescó: {fishName} | {size}cm | {weight}kg | +${scoreToAdd}");
+        Debug.Log($"[RoundManager] {player.gameObject.name} pescó: {fishName} | {size}cm | {weight:F2}kg | +${scoreToAdd}");
     }
 
     // -------------------------------------------------------------------------

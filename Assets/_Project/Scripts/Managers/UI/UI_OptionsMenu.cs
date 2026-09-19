@@ -16,7 +16,17 @@ public class UI_OptionsMenu : MonoBehaviour
     [Header("Player Settings")]
     [SerializeField] private Slider _playerCountSlider;
     [SerializeField] private TMPro.TMP_Text _playerCountLabel;
+
+    [Header("Game Settings")]
+    [Tooltip("Min: 0 (Fácil), Max: 2 (Difícil)")]
+    [SerializeField] private Slider _difficultySlider;
+    [SerializeField] private TMPro.TMP_Text _difficultyLabel;
+
+    [Tooltip("Min: 0 (Poco), Max: 2 (Mucho)")]
+    [SerializeField] private Slider _fishAmountSlider;
+    [SerializeField] private TMPro.TMP_Text _fishAmountLabel;
     
+    [Header("Slots")]
     [Tooltip("Arrastrar acá las 6 filas de configuración creadas en la UI")]
     [SerializeField] private UI_PlayerConfigSlot[] _playerSlots;
 
@@ -57,14 +67,28 @@ public class UI_OptionsMenu : MonoBehaviour
     {
         if (_playerCountSlider != null)
         {
-            // Remover el listener temporalmente para que cambiar el .value no dispare OnPlayerCountChanged
             _playerCountSlider.onValueChanged.RemoveListener(OnPlayerCountChanged);
-            
             _playerCountSlider.value = MatchSettings.PlayerCount;
             UpdatePlayerCountLabel(MatchSettings.PlayerCount);
-            
             _playerCountSlider.onValueChanged.AddListener(OnPlayerCountChanged);
         }
+
+        if (_difficultySlider != null)
+        {
+            _difficultySlider.onValueChanged.RemoveListener(OnDifficultyChanged);
+            _difficultySlider.value = (int)MatchSettings.CurrentDifficulty;
+            UpdateDifficultyLabel((int)MatchSettings.CurrentDifficulty);
+            _difficultySlider.onValueChanged.AddListener(OnDifficultyChanged);
+        }
+
+        if (_fishAmountSlider != null)
+        {
+            _fishAmountSlider.onValueChanged.RemoveListener(OnFishAmountChanged);
+            _fishAmountSlider.value = (int)MatchSettings.CurrentFishAmount;
+            UpdateFishAmountLabel((int)MatchSettings.CurrentFishAmount);
+            _fishAmountSlider.onValueChanged.AddListener(OnFishAmountChanged);
+        }
+
         RefreshPlayerSlots();
     }
 
@@ -73,6 +97,8 @@ public class UI_OptionsMenu : MonoBehaviour
         MatchSettings.Save();
         if (_masterSlider != null) _masterSlider.onValueChanged.RemoveListener(OnMasterSliderChanged);
         if (_musicSlider  != null) _musicSlider.onValueChanged.RemoveListener(OnMusicSliderChanged);
+        if (_difficultySlider != null) _difficultySlider.onValueChanged.RemoveListener(OnDifficultyChanged);
+        if (_fishAmountSlider != null) _fishAmountSlider.onValueChanged.RemoveListener(OnFishAmountChanged);
         if (_sfxSlider    != null) _sfxSlider.onValueChanged.RemoveListener(OnSFXSliderChanged);
         
         if (_playerCountSlider != null) _playerCountSlider.onValueChanged.RemoveListener(OnPlayerCountChanged);
@@ -95,6 +121,37 @@ public class UI_OptionsMenu : MonoBehaviour
     {
         if (_playerCountLabel != null)
             _playerCountLabel.text = $"{count} JUGADORES";
+    }
+
+    // --- GAME SETTINGS ---
+    private void OnDifficultyChanged(float val)
+    {
+        int difficultyInt = Mathf.RoundToInt(val);
+        MatchSettings.CurrentDifficulty = (MatchSettings.GameDifficulty)difficultyInt;
+        UpdateDifficultyLabel(difficultyInt);
+        MatchSettings.Save();
+    }
+
+    private void UpdateDifficultyLabel(int val)
+    {
+        if (_difficultyLabel == null) return;
+        string[] labels = { "FÁCIL", "NORMAL", "DIFÍCIL" };
+        _difficultyLabel.text = $"DIFICULTAD: {labels[Mathf.Clamp(val, 0, 2)]}";
+    }
+
+    private void OnFishAmountChanged(float val)
+    {
+        int amountInt = Mathf.RoundToInt(val);
+        MatchSettings.CurrentFishAmount = (MatchSettings.FishAmount)amountInt;
+        UpdateFishAmountLabel(amountInt);
+        MatchSettings.Save();
+    }
+
+    private void UpdateFishAmountLabel(int val)
+    {
+        if (_fishAmountLabel == null) return;
+        string[] labels = { "POCOS", "NORMAL", "MUCHOS" };
+        _fishAmountLabel.text = $"PECES: {labels[Mathf.Clamp(val, 0, 2)]}";
     }
 
     public void RefreshPlayerSlots()

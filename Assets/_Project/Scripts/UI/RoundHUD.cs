@@ -92,7 +92,7 @@ public class RoundHUD : MonoBehaviour
     // -------------------------------------------------------------------------
     // Event Handlers
     // -------------------------------------------------------------------------
-    private void HandleFishCatchDetails(PlayerController player, string fishName, int size, int weight, int score)
+    private void HandleFishCatchDetails(PlayerController player, string fishName, int size, float weight, int score)
     {
         PlayerHUDSlot slot = _slots.Find(s => s.Player == player);
         slot?.ShowCatchBanner(fishName, size, weight, score);

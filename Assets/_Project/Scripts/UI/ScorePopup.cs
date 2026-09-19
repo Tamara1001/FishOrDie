@@ -10,10 +10,14 @@ public class ScorePopup : MonoBehaviour
 
     public void Initialize(int delta, Color color)
     {
-        string colorHex = ColorUtility.ToHtmlStringRGB(color);
+        // Formateo del signo
+        string prefix = delta >= 0 ? "+" : "-";
         
-        // Usamos el color base brillante y evitamos tags experimentales que puedan romper el texto
-        _label.text  = $"<color=#{colorHex}>+{delta}</color>";
+        // Usamos el color del jugador, y si es negativo quizás un color rojizo
+        if (delta < 0) color = Color.red;
+        
+        string colorHex = ColorUtility.ToHtmlStringRGB(color);
+        _label.text  = $"<color=#{colorHex}>{prefix}{Mathf.Abs(delta)}</color>";
         
         StartCoroutine(AnimateAndDestroy());
     }
