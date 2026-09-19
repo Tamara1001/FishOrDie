@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FishData
   fishName: Mocholo
   fishSprite: {fileID: 21300000, guid: acbd3966ee814054da170cbe7693d0f1, type: 3}
-  catchDifficulty: 0.85
-  minSizeCm: 50
-  maxSizeCm: 120
-  minWeightKg: 5
-  maxWeightKg: 15
-  valuePerKg: 20
+  catchDifficulty: 0.3
+  minSizeCm: 20
+  maxSizeCm: 40
+  minWeightKg: 1
+  maxWeightKg: 2
+  valuePerKg: 70

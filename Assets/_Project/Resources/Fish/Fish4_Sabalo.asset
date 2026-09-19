@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae02968f817348c41a565cae0a99fbb2, type: 3}
   m_Name: Fish4_Sabalo
   m_EditorClassIdentifier: Assembly-CSharp::FishData
-  fishName: "S\xE1balo"
+  fishName: Sabalo
   fishSprite: {fileID: 21300000, guid: 0c38cf843c39a3b458e040a16e30ca55, type: 3}
-  catchDifficulty: 0.3
+  catchDifficulty: 0.4
   minSizeCm: 30
   maxSizeCm: 60
   minWeightKg: 2
   maxWeightKg: 6
-  valuePerKg: 6
+  valuePerKg: 104

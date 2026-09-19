@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae02968f817348c41a565cae0a99fbb2, type: 3}
   m_Name: Fish2_ViejaDelAgua
   m_EditorClassIdentifier: Assembly-CSharp::FishData
-  fishName: Vieja del Agua
+  fishName: Surubi
   fishSprite: {fileID: 2118739539079310105, guid: f5f0578acf9201a43a5b6930f40d3104, type: 3}
-  catchDifficulty: 0.5
-  minSizeCm: 30
-  maxSizeCm: 60
-  minWeightKg: 2
-  maxWeightKg: 5
-  valuePerKg: 8
+  catchDifficulty: 0.9
+  minSizeCm: 80
+  maxSizeCm: 150
+  minWeightKg: 10
+  maxWeightKg: 40
+  valuePerKg: 120

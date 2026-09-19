@@ -511,6 +511,15 @@ public class PlayerController : MonoBehaviour
 
     private System.Collections.IEnumerator BobberAlertRoutine()
     {
+        if (_bobberVisual != null && _bobberAlertObject != null)
+        {
+            // Sincronizar dinámicamente la posición X con la boya, manteniendo su Y original relativa al root
+            Vector3 alertLocalPos = _bobberAlertObject.transform.localPosition;
+            Vector3 bobberLocalPos = _bobberAlertObject.transform.parent.InverseTransformPoint(_bobberVisual.position);
+            alertLocalPos.x = bobberLocalPos.x;
+            _bobberAlertObject.transform.localPosition = alertLocalPos;
+        }
+
         _bobberAlertObject.SetActive(true);
         Vector3 origScale = _bobberAlertObject.transform.localScale;
         

@@ -14,15 +14,15 @@ public class UI_WikiSlot : MonoBehaviour
     {
         if (_fishImage != null) _fishImage.sprite = data.fishSprite;
         if (_nameText != null) _nameText.text = data.fishName;
-        if (_sizeText != null) _sizeText.text = $"{data.minSizeCm}cm - {data.maxSizeCm}cm";
+        if (_sizeText != null) _sizeText.text = $"<color=#A0A0A0>Largo:</color> {data.minSizeCm} - {data.maxSizeCm} cm";
 
         if (_weightText != null)
         {
             string minW = data.minWeightKg < 1f ? $"{Mathf.RoundToInt(data.minWeightKg * 1000f)}g" : $"{data.minWeightKg:F1}kg";
             string maxW = data.maxWeightKg < 1f ? $"{Mathf.RoundToInt(data.maxWeightKg * 1000f)}g" : $"{data.maxWeightKg:F1}kg";
-            _weightText.text = $"{minW} - {maxW}";
+            _weightText.text = $"<color=#A0A0A0>Peso:</color> {minW} - {maxW}";
         }
 
-        if (_valueText != null) _valueText.text = $"${Mathf.RoundToInt(data.valuePerKg)} x Kg";
+        if (_valueText != null) _valueText.text = $"<color=#A0A0A0>Valor:</color> <color=#FFD700>${Mathf.RoundToInt(data.valuePerKg)} /Kg</color>";
     }
 }

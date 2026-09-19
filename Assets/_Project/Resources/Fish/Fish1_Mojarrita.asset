@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae02968f817348c41a565cae0a99fbb2, type: 3}
   m_Name: Fish1_Mojarrita
   m_EditorClassIdentifier: Assembly-CSharp::FishData
-  fishName: Mojarrita
+  fishName: Mojarra
   fishSprite: {fileID: 21300000, guid: ccedcd3afefec0f419a534ed04b908c7, type: 3}
-  catchDifficulty: 0.1
+  catchDifficulty: 0.15
   minSizeCm: 5
   maxSizeCm: 15
-  minWeightKg: 1
-  maxWeightKg: 2
-  valuePerKg: 5
+  minWeightKg: 0.03
+  maxWeightKg: 0.5
+  valuePerKg: 92

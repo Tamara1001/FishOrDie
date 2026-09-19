@@ -17,6 +17,8 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject optionsPanel;
     [SerializeField] private GameObject creditsPanel;
     [SerializeField] private GameObject pausePanel;
+    [SerializeField] private GameObject galeriaPanel;
+    [SerializeField] private GameObject tutorialPanel;
 
     // -------------------------------------------------------------------------
     // Unity Lifecycle
@@ -138,6 +140,8 @@ public class UIManager : MonoBehaviour
         lobbyPanel?.SetActive(false);
         optionsPanel?.SetActive(false);
         creditsPanel?.SetActive(false);
+        galeriaPanel?.SetActive(false);
+        tutorialPanel?.SetActive(false);
     }
 
     // -------------------------------------------------------------------------
@@ -177,6 +181,23 @@ public class UIManager : MonoBehaviour
 
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_StartGame");
         lobbyPanel?.SetActive(false);
+
+        // Interceptar SIEMPRE con el tutorial (se puede skippear)
+        if (tutorialPanel != null)
+        {
+            UI_TutorialMenu tutMenu = tutorialPanel.GetComponent<UI_TutorialMenu>();
+            if (tutMenu != null)
+            {
+                tutMenu.ShowTutorial(() => 
+                {
+                    // Callback cuando termina el tutorial
+                    GameManager.Instance.StartNewGame();
+                });
+                return; // Corta la ejecución para esperar al tutorial
+            }
+        }
+
+        // Fallback por si no hay panel de tutorial
         GameManager.Instance.StartNewGame();
     }
     
@@ -229,6 +250,21 @@ public class UIManager : MonoBehaviour
         Debug.Log("[UIManager] Cerrando créditos");
         creditsPanel?.SetActive(false);
     }
+
+    public void OnGaleriaClicked()
+    {
+        if (_isTransitioning) return;
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Click");
+        galeriaPanel?.SetActive(true);
+    }
+
+    public void OnCloseGaleriaClicked()
+    {
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_Cancel");
+        galeriaPanel?.SetActive(false);
+    }
+
+    // Eliminado: OnTutorialClicked ya que ahora se intercepta al jugar
 
     public void OnQuitClicked()
     {

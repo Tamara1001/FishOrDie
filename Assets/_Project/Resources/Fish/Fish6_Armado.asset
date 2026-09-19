@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FishData
   fishName: Armado
   fishSprite: {fileID: 21300000, guid: 1e4cb238ec1e8754e86088d6122c3833, type: 3}
-  catchDifficulty: 0.7
-  minSizeCm: 40
-  maxSizeCm: 90
-  minWeightKg: 4
-  maxWeightKg: 10
-  valuePerKg: 12
+  catchDifficulty: 0.5
+  minSizeCm: 30
+  maxSizeCm: 70
+  minWeightKg: 2
+  maxWeightKg: 6.5
+  valuePerKg: 115

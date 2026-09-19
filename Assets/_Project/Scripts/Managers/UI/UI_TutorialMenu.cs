@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using TMPro;
 
 public class UI_TutorialMenu : MonoBehaviour
@@ -8,46 +8,22 @@ public class UI_TutorialMenu : MonoBehaviour
     
     private string[] _dialogues = new string[]
     {
-        "¡Bienvenidos al Río Paraná!\nEl objetivo es atrapar peces para sumar puntos.",
-        "El jugador con MENOS puntos al terminar el tiempo será DEVORADO por el Monstruo.",
-        "Cuando un pez nade a la superficie y toque tu boya, ¡Apretá tu tecla rápidamente para engancharlo!",
-        "Luego, presioná repetidamente para mantener la barra verde llena y capturarlo.",
-        "¡CUIDADO CON LA BASURA! Si ves una bota o botella flotando, no intentes pescarla o perderás puntos instantáneamente.",
-        "¡Buena suerte, y que no te coman!"
+        "¡Bienvenidos a Fish or Die!\nEl objetivo es atrapar peces y sobrevivir en las peligrosas aguas del Río Paraná.\n\nAl finalizar el tiempo, el jugador con MENOS dinero será DEVORADO por el Monstruo del río.",
+        "Atento a tu pescador: cuando empiece a forcejear y aparezca el triángulo sobre la boya, ¡apretá rápidamente tu tecla para enganchar el pez!\n\nLuego, presionala repetidamente para mantener el pez en la zona verde y capturarlo.",
+        "¡OJO CON LA BASURA! Si pican botas o botellas viejas NO aprietes nada. Si las pescás te restarán dinero instantáneamente.\n\nPeces como el Dorado dan mucho dinero pero son agresivos. ¡Buena suerte, y que no te coman!"
     };
     
     private int _currentIndex = 0;
+    private System.Action _onTutorialComplete;
 
-    private void Start()
+    public void ShowTutorial(System.Action onComplete = null)
     {
-        if (PlayerPrefs.GetInt("TutorialVisto", 0) == 1)
-        {
-            if (_tutorialPanel != null) _tutorialPanel.SetActive(false);
-            return;
-        }
-
-        GameManager.OnStateChanged += HandleStateChanged;
-    }
-
-    private void OnDestroy()
-    {
-        GameManager.OnStateChanged -= HandleStateChanged;
-    }
-
-    private void HandleStateChanged(GameManager.GameState state)
-    {
-        if (state == GameManager.GameState.Playing && PlayerPrefs.GetInt("TutorialVisto", 0) == 0)
-        {
-            ShowTutorial();
-        }
-    }
-
-    private void ShowTutorial()
-    {
+        gameObject.SetActive(true);
         if (_tutorialPanel != null) _tutorialPanel.SetActive(true);
+        
+        _onTutorialComplete = onComplete;
         _currentIndex = 0;
         UpdateText();
-        Time.timeScale = 0f; // Pausar
     }
 
     public void OnNextClicked()
@@ -77,14 +53,11 @@ public class UI_TutorialMenu : MonoBehaviour
 
     private void EndTutorial()
     {
-        PlayerPrefs.SetInt("TutorialVisto", 1);
-        PlayerPrefs.Save();
-        
         if (_tutorialPanel != null) _tutorialPanel.SetActive(false);
+        gameObject.SetActive(false); // Apagar el panel raíz también
         
-        if (GameManager.Instance.CurrentState == GameManager.GameState.Playing)
-        {
-            Time.timeScale = 1f;
-        }
+        // Disparar el inicio del juego si venimos del Lobby
+        _onTutorialComplete?.Invoke();
+        _onTutorialComplete = null;
     }
 }

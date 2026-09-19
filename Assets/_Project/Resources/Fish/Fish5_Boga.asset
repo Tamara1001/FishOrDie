@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FishData
   fishName: Boga
   fishSprite: {fileID: 21300000, guid: 978cd2727d99cfe42976b297074876eb, type: 3}
-  catchDifficulty: 0.6
-  minSizeCm: 40
-  maxSizeCm: 80
-  minWeightKg: 3
-  maxWeightKg: 8
-  valuePerKg: 15
+  catchDifficulty: 0.35
+  minSizeCm: 20
+  maxSizeCm: 50
+  minWeightKg: 1
+  maxWeightKg: 3
+  valuePerKg: 99
