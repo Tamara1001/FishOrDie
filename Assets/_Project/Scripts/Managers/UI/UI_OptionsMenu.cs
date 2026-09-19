@@ -53,6 +53,21 @@ public class UI_OptionsMenu : MonoBehaviour
         RefreshPlayerSlots();
     }
 
+    private void OnEnable()
+    {
+        if (_playerCountSlider != null)
+        {
+            // Remover el listener temporalmente para que cambiar el .value no dispare OnPlayerCountChanged
+            _playerCountSlider.onValueChanged.RemoveListener(OnPlayerCountChanged);
+            
+            _playerCountSlider.value = MatchSettings.PlayerCount;
+            UpdatePlayerCountLabel(MatchSettings.PlayerCount);
+            
+            _playerCountSlider.onValueChanged.AddListener(OnPlayerCountChanged);
+        }
+        RefreshPlayerSlots();
+    }
+
     private void OnDestroy()
     {
         MatchSettings.Save();

@@ -64,7 +64,7 @@ public class UI_LobbyMenu : MonoBehaviour
                 string cleanName = InputControlPath.ToHumanReadableString(binding, InputControlPath.HumanReadableStringOptions.OmitDevice);
                 MatchSettings.PlayerNames[i] = $"Jugador {cleanName.ToUpper()}";
                 
-                MatchSettings.PlayerColors[i] = GetFirstUnusedColor();
+                MatchSettings.PlayerColors[i] = MatchSettings.GetFirstUnusedColor();
                 
                 if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_StartGame");
                 
@@ -72,26 +72,6 @@ public class UI_LobbyMenu : MonoBehaviour
                 break;
             }
         }
-    }
-
-    private Color GetFirstUnusedColor()
-    {
-        foreach (Color candidate in MatchSettings.AvailableColors)
-        {
-            bool isUsed = false;
-            for (int k = 0; k < MatchSettings.MAX_PLAYERS; k++)
-            {
-                if (MatchSettings.PlayerActive[k] && MatchSettings.PlayerColors[k] == candidate)
-                {
-                    isUsed = true;
-                    break;
-                }
-            }
-            if (!isUsed) return candidate;
-        }
-        
-        // Si (por algún motivo rarísimo) todos los colores de la paleta estuvieran usados, devolvemos uno al azar
-        return MatchSettings.AvailableColors[Random.Range(0, MatchSettings.AvailableColors.Length)];
     }
 
     public void RefreshLobbySlots()

@@ -63,7 +63,13 @@ namespace TopDownShooter.UI
         public void OnQuitClicked()
         {
             Debug.Log("OnQuitClicked: Exiting application.");
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#elif UNITY_WEBGL
+            Screen.fullScreen = false;
+#else
             Application.Quit();
+#endif
         }
     }
 }

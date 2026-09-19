@@ -13,7 +13,16 @@ public static class MatchSettings
         {
             for (int i = 0; i < MAX_PLAYERS; i++)
             {
+                bool wasActive = PlayerActive[i];
                 PlayerActive[i] = (i < value);
+                
+                // Si este slot acaba de ser activado por el slider de Opciones
+                if (!wasActive && PlayerActive[i])
+                {
+                    PlayerNames[i] = $"Jugador P{i + 1}";
+                    PlayerColors[i] = GetFirstUnusedColor();
+                    PlayerBindings[i] = GetFirstUnusedBinding();
+                }
             }
         }
     }
@@ -30,7 +39,7 @@ public static class MatchSettings
         new Color(0.5f, 0f, 1f), // Violeta
         Color.magenta,
         Color.white,
-        Color.black,
+        new Color(0.2f, 0.2f, 0.2f), // Gris muy oscuro (reemplaza al negro)
         new Color(1f, 0.75f, 0.8f) // Rosa
     };
 
@@ -102,8 +111,46 @@ public static class MatchSettings
         }
         
         // El último slot siempre queda libre después de recorrer
-        PlayerActive[MAX_PLAYERS - 1] = false;
+        int lastIndex = MAX_PLAYERS - 1;
+        PlayerActive[lastIndex] = false;
         
         Save();
+    }
+
+    public static Color GetFirstUnusedColor()
+    {
+        foreach (Color candidate in AvailableColors)
+        {
+            bool isUsed = false;
+            for (int k = 0; k < MAX_PLAYERS; k++)
+            {
+                if (PlayerActive[k] && PlayerColors[k] == candidate)
+                {
+                    isUsed = true;
+                    break;
+                }
+            }
+            if (!isUsed) return candidate;
+        }
+        return AvailableColors[Random.Range(0, AvailableColors.Length)];
+    }
+
+    public static string GetFirstUnusedBinding()
+    {
+        string[] defaults = { "<Keyboard>/a", "<Keyboard>/s", "<Keyboard>/d", "<Keyboard>/f", "<Keyboard>/g", "<Keyboard>/h", "<Keyboard>/j", "<Keyboard>/k", "<Keyboard>/l" };
+        foreach (string candidate in defaults)
+        {
+            bool isUsed = false;
+            for (int k = 0; k < MAX_PLAYERS; k++)
+            {
+                if (PlayerActive[k] && PlayerBindings[k].ToLower() == candidate.ToLower())
+                {
+                    isUsed = true;
+                    break;
+                }
+            }
+            if (!isUsed) return candidate;
+        }
+        return "<Keyboard>/space";
     }
 }
