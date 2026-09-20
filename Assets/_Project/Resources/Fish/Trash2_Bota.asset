@@ -17,6 +17,6 @@ MonoBehaviour:
   catchDifficulty: 0.2
   minSizeCm: 20
   maxSizeCm: 40
-  minWeightKg: 2
-  maxWeightKg: 3
-  valuePerKg: -40
+  minWeightKg: 1
+  maxWeightKg: 1
+  valuePerKg: -30

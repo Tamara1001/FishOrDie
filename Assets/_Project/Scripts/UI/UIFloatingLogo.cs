@@ -29,7 +29,6 @@ public class UIFloatingLogo : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     private Vector3 _originalScale;
     
     private Vector3 _targetScale;
-    private bool _isHovered;
 
     private void Awake()
     {
@@ -65,13 +64,11 @@ public class UIFloatingLogo : MonoBehaviour, IPointerEnterHandler, IPointerExitH
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        _isHovered = true;
         _targetScale = _originalScale * hoverScale;
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        _isHovered = false;
         _targetScale = _originalScale;
     }
 }

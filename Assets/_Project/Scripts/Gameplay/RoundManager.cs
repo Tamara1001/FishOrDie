@@ -6,9 +6,6 @@ using UnityEngine;
 public class RoundManager : MonoBehaviour
 {
     [Header("Round Settings")]
-    [Min(5f)]
-    [SerializeField] private float _roundDuration = 30f;
-
     [Header("Fish Pool")]
     [Tooltip("Lista de peces disponibles para pescar. Si está vacía, se suma 1 punto por intento.")]
     [SerializeField] private FishData[] _fishPool;
@@ -133,14 +130,26 @@ public class RoundManager : MonoBehaviour
 
         SubscribeToPlayers();
 
-        _timeRemaining = _roundDuration;
+        // Determinar tiempo según cantidad de jugadores vivos
+        switch (_activePlayers.Count)
+        {
+            case 2: 
+                int startingPlayers = MatchSettings.GetActivePlayerCount();
+                _timeRemaining = (startingPlayers > 2) ? 60f : 90f;
+                break;
+            case 3: _timeRemaining = 50f; break;
+            case 4: _timeRemaining = 45f; break;
+            case 5: _timeRemaining = 40f; break;
+            default: _timeRemaining = 30f; break; // 6 jugadores o más (o 1 por error)
+        }
+
         _roundActive   = true;
 
         if (_riverSpawner != null) 
             _riverSpawner.StartSpawning(_fishPool, _activePlayers);
 
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Round_Start");
-        Debug.Log($"[RoundManager] Ronda iniciada con {_activePlayers.Count} jugador(es).");
+        Debug.Log($"[RoundManager] Ronda iniciada con {_activePlayers.Count} jugador(es). Duración: {_timeRemaining}s");
     }
 
     private void EndRound()

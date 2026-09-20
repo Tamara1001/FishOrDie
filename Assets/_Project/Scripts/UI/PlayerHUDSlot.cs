@@ -64,6 +64,7 @@ public class PlayerHUDSlot : MonoBehaviour
 
     private int _displayedScore = 0;
     private Coroutine _scoreRoutine;
+    private float _lastRollingSoundTime;
 
     public void RefreshScore()
     {
@@ -93,10 +94,14 @@ public class PlayerHUDSlot : MonoBehaviour
             _displayedScore = Mathf.RoundToInt(Mathf.Lerp(startScore, targetScore, t));
             _scoreLabel.text = _displayedScore.ToString();
             
-            // Sonido de cuenta (si el número cambió)
+            // Sonido de cuenta (rate-limited para que no sature el canal)
             if (_displayedScore != lastPlayedScore && AudioManager.Instance != null)
             {
-                AudioManager.Instance.PlaySFX("UI_ScoreRolling");
+                if (Time.time - _lastRollingSoundTime >= 0.15f) // max ~6 veces por segundo
+                {
+                    AudioManager.Instance.PlaySFX("UI_ScoreRolling");
+                    _lastRollingSoundTime = Time.time;
+                }
                 lastPlayedScore = _displayedScore;
             }
 

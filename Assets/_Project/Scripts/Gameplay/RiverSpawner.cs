@@ -80,8 +80,8 @@ public class RiverSpawner : MonoBehaviour
             if (_fishPrefab == null || _currentPool == null || _currentPool.Length == 0) 
                 continue;
 
-            // Pickeamos tipo de pez al azar del pool de este nivel
-            FishData randomFish = _currentPool[Random.Range(0, _currentPool.Length)];
+            // Pickeamos tipo de pez al azar pero PONDERADO por rareza
+            FishData randomFish = GetWeightedRandomFish();
             if (randomFish == null) continue; // Protección extra contra assets corruptos
 
             
@@ -111,5 +111,36 @@ public class RiverSpawner : MonoBehaviour
                 ActiveFishes.Add(visual);
             }
         }
+    }
+
+    private FishData GetWeightedRandomFish()
+    {
+        float totalWeight = 0f;
+        List<float> weights = new List<float>();
+
+        foreach (var fish in _currentPool)
+        {
+            float w = 1f; 
+            
+            if (fish.valuePerKg < 0) w = 30f; // Basura -> 15% (aprox)
+            else if (fish.maxWeightKg >= 9f) w = 10f; // Gigantes (Rojo) -> 5% (aprox)
+            else if (fish.maxWeightKg > 1.5f) w = 40f; // Medianos (Amarillo) -> 20% (aprox)
+            else w = 120f; // Chicos (Verde) -> 60% (aprox)
+            
+            weights.Add(w);
+            totalWeight += w;
+        }
+
+        float randomVal = Random.Range(0f, totalWeight);
+        float currentSum = 0f;
+
+        for (int i = 0; i < _currentPool.Length; i++)
+        {
+            currentSum += weights[i];
+            if (randomVal <= currentSum)
+                return _currentPool[i];
+        }
+
+        return _currentPool[0]; 
     }
 }

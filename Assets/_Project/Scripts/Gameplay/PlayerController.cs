@@ -152,35 +152,22 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         if (GameManager.Instance == null) return;
-        if (GameManager.Instance.CurrentState != GameManager.GameState.Playing) return;
+        
+        if (GameManager.Instance.CurrentState != GameManager.GameState.Playing)
+        {
+            StopLocalTensionAudio();
+            return;
+        }
+        
         if (_fishAction == null) return;
 
         if (CurrentSkillCheck != null && CurrentSkillCheck.IsActive)
         {
             CurrentSkillCheck.Tick(Time.deltaTime, _fishAction.IsPressed());
-            
-            // Audio del riel de pesca (solo suena cuando está interactuando)
-            if (_fishAction.IsPressed())
-            {
-                if (!_isPlayingTensionSFX && _localAudioSource != null && _localAudioSource.clip != null)
-                {
-                    _localAudioSource.Play();
-                    _isPlayingTensionSFX = true;
-                }
-            }
-            else
-            {
-                if (_isPlayingTensionSFX && _localAudioSource != null)
-                {
-                    _localAudioSource.Stop();
-                    _isPlayingTensionSFX = false;
-                }
-            }
 
             // Tensión visual (vibración) mientras pesca
             if (_playerVisualRoot != null)
             {
-                // Vibración suave de base, vibración fuerte si está presionando/tirando
                 float shakeForce = _fishAction.IsPressed() ? 0.06f : 0.015f; 
                 _playerVisualRoot.localPosition = new Vector3(
                     UnityEngine.Random.Range(-shakeForce, shakeForce),
@@ -189,7 +176,6 @@ public class PlayerController : MonoBehaviour
                 );
             }
             
-            // Hacer vibrar a la boya de forma similar (o más frenética)
             if (_bobberVisual != null)
             {
                 float shakeForce = _fishAction.IsPressed() ? 0.08f : 0.02f;
@@ -199,8 +185,6 @@ public class PlayerController : MonoBehaviour
                     0f
                 );
             }
-
-            return;
         }
         else
         {
@@ -214,12 +198,26 @@ public class PlayerController : MonoBehaviour
             {
                 _bobberVisual.localPosition = Vector3.Lerp(_bobberVisual.localPosition, _baseBobberPos, Time.deltaTime * 10f);
             }
+
+            if (_fishAction.WasPressedThisFrame())
+            {
+                DoSquashAndStretch();
+                OnFishAttempt?.Invoke(this);
+            }
         }
 
-        if (_fishAction.WasPressedThisFrame())
+        // --- MANEJO DETERMINISTA DEL AUDIO DE TENSIÓN ---
+        bool shouldPlayTension = (CurrentSkillCheck != null && CurrentSkillCheck.IsActive && _fishAction.IsPressed());
+        
+        if (shouldPlayTension && !_isPlayingTensionSFX && _localAudioSource != null && _localAudioSource.clip != null)
         {
-            DoSquashAndStretch();
-            OnFishAttempt?.Invoke(this);
+            _localAudioSource.Play();
+            _isPlayingTensionSFX = true;
+        }
+        else if (!shouldPlayTension && _isPlayingTensionSFX && _localAudioSource != null)
+        {
+            _localAudioSource.Stop();
+            _isPlayingTensionSFX = false;
         }
     }
 

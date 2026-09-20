@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
 using UnityEngine.Events;
@@ -154,7 +154,7 @@ public class MenuUIGenerator : EditorWindow
         SetRectAnchor(tutTitle, new Vector2(0, 0.8f), new Vector2(1, 1));
 
         GameObject tutText = CreateText(tutBox.transform, "Text", "Texto del tutorial...", 28, false);
-        tutText.GetComponent<TextMeshProUGUI>().enableWordWrapping = true;
+        tutText.GetComponent<TextMeshProUGUI>().textWrappingMode = TextWrappingModes.Normal;
         SetRectAnchor(tutText, new Vector2(0.05f, 0.2f), new Vector2(0.95f, 0.8f));
 
         GameObject btnNext = CreateButton(tutBox.transform, "Btn_Next", "SIGUIENTE");

@@ -11,9 +11,6 @@ public class PlayerSpawner : MonoBehaviour
     [Tooltip("Posición Y del muelle donde aparecen los jugadores.")]
     [SerializeField] private float _spawnY = 0f;
 
-    [Tooltip("Ancho total del área de spawn. Los jugadores se distribuyen equidistantemente.")]
-    [SerializeField] private float _totalSpawnWidth = 6f;
-
     public IReadOnlyList<PlayerController> SpawnedPlayers => _spawnedPlayers;
     private readonly List<PlayerController> _spawnedPlayers = new();
 

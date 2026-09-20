@@ -19,4 +19,4 @@ MonoBehaviour:
   maxSizeCm: 40
   minWeightKg: 1
   maxWeightKg: 2
-  valuePerKg: 70
+  valuePerKg: 30

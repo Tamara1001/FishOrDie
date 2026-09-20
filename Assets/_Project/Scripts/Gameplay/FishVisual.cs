@@ -12,10 +12,34 @@ public class FishVisual : MonoBehaviour
     private float _catchRadius = 2.0f; // Qué tan cerca del target sube a la superficie
     
     private SpriteRenderer _sr;
+    private SpriteRenderer _auraSr;
+    private Color _baseEffectColor;
     private Vector3 _baseScale;
 
     private bool _hasPaused = false;
     private float _pauseTimer = 0f;
+
+    private static Sprite _auraSprite;
+
+    private static void EnsureAuraSprite()
+    {
+        if (_auraSprite != null) return;
+        int size = 64;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        Vector2 center = new Vector2(size/2f, size/2f);
+        float radius = size/2f;
+        for(int y=0; y<size; y++){
+            for(int x=0; x<size; x++){
+                float dist = Vector2.Distance(new Vector2(x, y), center);
+                // Difuminado suave pero mucho más ajustado al centro
+                float alpha = Mathf.Clamp01(1f - (dist / radius));
+                alpha = alpha * alpha * alpha; // Curva pronunciada para que no parezca una nube gigante
+                tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha * 0.5f)); // 50% max alpha
+            }
+        }
+        tex.Apply();
+        _auraSprite = Sprite.Create(tex, new Rect(0,0,size,size), new Vector2(0.5f, 0.5f), 32f);
+    }
 
     // Se llama desde el spawner al nacer
     public void Initialize(FishData data, float speed, Vector3 direction, PlayerController targetPlayer)
@@ -29,23 +53,61 @@ public class FishVisual : MonoBehaviour
         _sr = GetComponent<SpriteRenderer>();
         _baseScale = transform.localScale;
 
+        EnsureAuraSprite();
+
         if (_sr != null && data != null)
         {
             _sr.sprite = data.fishSprite;
             _sr.flipX = direction.x < 0;
+            
+            _sr.sortingOrder += 5; // Empujamos el pez para que el aura no quede detras del agua
 
-            if (data.catchDifficulty >= 0.7f)
+            // --- DEFINIR COLORES Y EFECTOS POR TIER ---
+            if (data.valuePerKg < 0)
             {
-                StartCoroutine(GhostTrailRoutine());
+                // Basura
+                _baseEffectColor = new Color(0.2f, 0.2f, 0.2f, 0.7f); 
             }
+            else if (data.maxWeightKg >= 9.0f)
+            {
+                // Gigante (Surubi, Dorado)
+                _baseEffectColor = Color.red;
+            }
+            else if (data.maxWeightKg > 1.5f)
+            {
+                // Mediano (Sábalo, Armado, Boga, Mocholo)
+                _baseEffectColor = Color.yellow;
+            }
+            else
+            {
+                // Chico (Mojarra)
+                _baseEffectColor = Color.green;
+            }
+
+            // Crear Aura difusa
+            GameObject auraObj = new GameObject("FishAura");
+            auraObj.transform.SetParent(this.transform);
+            auraObj.transform.localPosition = Vector3.zero;
+            // Estirar el óvalo para que se ajuste más pegado al pez y no sea una nube gigante
+            auraObj.transform.localScale = new Vector3(1.3f, 0.6f, 1f);
+
+            _auraSr = auraObj.AddComponent<SpriteRenderer>();
+            _auraSr.sprite = _auraSprite;
+            _auraSr.color = _baseEffectColor;
+            _auraSr.sortingLayerID = _sr.sortingLayerID;
+            _auraSr.sortingLayerName = _sr.sortingLayerName;
+            _auraSr.sortingOrder = _sr.sortingOrder - 1;
+
+            // Iniciar rastro sutil para TODOS
+            StartCoroutine(GhostTrailRoutine(_baseEffectColor));
         }
     }
 
-    private System.Collections.IEnumerator GhostTrailRoutine()
+    private System.Collections.IEnumerator GhostTrailRoutine(Color effectColor)
     {
         while (true)
         {
-            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.15f); // Menos frecuente para que sea sutil
 
             GameObject ghost = new GameObject("FishGhost");
             ghost.transform.position = transform.position;
@@ -54,18 +116,13 @@ public class FishVisual : MonoBehaviour
             SpriteRenderer ghostSr = ghost.AddComponent<SpriteRenderer>();
             ghostSr.sprite = _sr.sprite;
             ghostSr.flipX = _sr.flipX;
-            // Opacidad inicial más alta (70%) para que se note más
-            ghostSr.color = new Color(_sr.color.r, _sr.color.g, _sr.color.b, 0.7f);
+            // Opacidad sutil de color
+            ghostSr.color = new Color(effectColor.r, effectColor.g, effectColor.b, 0.25f);
             
-            // ¡CRUCIAL! Copiar la capa de renderizado para que no quede detrás del fondo
             ghostSr.sortingLayerID = _sr.sortingLayerID;
             ghostSr.sortingLayerName = _sr.sortingLayerName;
-            
-            // Usamos EXACTAMENTE el mismo Order in Layer. Si le restamos 1, 
-            // corre el riesgo de irse a -1 y quedar detrás del río.
-            ghostSr.sortingOrder = _sr.sortingOrder;
+            ghostSr.sortingOrder = _sr.sortingOrder - 2;
 
-            // Le agregamos el script de auto-desvanecimiento para que se maneje solo
             ghost.AddComponent<FishGhostFader>();
         }
     }
@@ -128,7 +185,7 @@ public class FishVisual : MonoBehaviour
         {
             Color deepColor = new Color(0.2f, 0.3f, 0.45f, 0.6f);
             _sr.color = Color.Lerp(Color.white, deepColor, depthFactor);
-            
+
             float scaleMult = Mathf.Lerp(1f, 0.6f, depthFactor);
             transform.localScale = _baseScale * scaleMult;
         }
