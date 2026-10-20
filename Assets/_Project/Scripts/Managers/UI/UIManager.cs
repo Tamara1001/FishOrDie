@@ -181,6 +181,7 @@ public class UIManager : MonoBehaviour
 
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UI_StartGame");
         lobbyPanel?.SetActive(false);
+        mainMenuPanel?.SetActive(false); // <--- Ocultar menú para ver el río
 
         // Interceptar SIEMPRE con el tutorial (se puede skippear)
         if (tutorialPanel != null)

@@ -21,6 +21,10 @@ public class SkillCheckPanel : MonoBehaviour
     [Tooltip("CanvasGroup raíz del panel. Alpha = 0 cuando el Skill Check no está activo.")]
     [SerializeField] private CanvasGroup _canvasGroup;
 
+    [Header("Feedback Text")]
+    [Tooltip("Texto dinámico que da órdenes al jugador en tiempo real.")]
+    [SerializeField] private TMPro.TMP_Text _dynamicFeedbackText;
+
     private PlayerController _player;
 
     // -------------------------------------------------------------------------
@@ -32,6 +36,28 @@ public class SkillCheckPanel : MonoBehaviour
 
         if (_canvasGroup != null)
             _canvasGroup.alpha = 0f;
+            
+        // Crear el texto de feedback dinámico si no existe
+        if (_dynamicFeedbackText == null && _canvasGroup != null)
+        {
+            GameObject txtObj = new GameObject("DynamicFeedbackText");
+            txtObj.transform.SetParent(_canvasGroup.transform, false);
+            _dynamicFeedbackText = txtObj.AddComponent<TMPro.TextMeshProUGUI>();
+            _dynamicFeedbackText.alignment = TMPro.TextAlignmentOptions.Center;
+            _dynamicFeedbackText.fontSize = 28f;
+            _dynamicFeedbackText.fontStyle = TMPro.FontStyles.Bold;
+            
+            RectTransform rt = _dynamicFeedbackText.rectTransform;
+            rt.anchorMin = new Vector2(0.5f, 1f);
+            rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(0.5f, 0f);
+            rt.anchoredPosition = new Vector2(0f, 25f); // Aparece arriba de la barra
+            
+            // Outline para legibilidad
+            _dynamicFeedbackText.fontSharedMaterial.EnableKeyword("OUTLINE_ON");
+            _dynamicFeedbackText.outlineWidth = 0.2f;
+            _dynamicFeedbackText.outlineColor = Color.black;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -89,6 +115,36 @@ public class SkillCheckPanel : MonoBehaviour
 
         if (_progressBar != null)
             _progressBar.fillAmount = sc.CatchProgress;
+            
+        // Lógica del instructor visual (Feedback)
+        if (_dynamicFeedbackText != null)
+        {
+            float fishBottom = sc.FishPosition; 
+            float barBottom = sc.BarPosition;
+            float barTop = sc.BarPosition + sc.BarSize;
+
+            if (fishBottom > barTop)
+            {
+                // Pez arriba de la barra -> hay que subir la barra (Apretar)
+                _dynamicFeedbackText.text = "¡APRETÁ MÁS RÁPIDO!";
+                _dynamicFeedbackText.color = new Color(1f, 0.5f, 0f); // Naranja
+            }
+            else if (fishBottom < barBottom)
+            {
+                // Pez abajo de la barra -> hay que bajar la barra (Soltar)
+                _dynamicFeedbackText.text = "¡SOLTÁ!";
+                _dynamicFeedbackText.color = new Color(1f, 0.2f, 0.2f); // Rojo alerta
+            }
+            else
+            {
+                _dynamicFeedbackText.text = "¡MANTENÉ EL RITMO!";
+                float alpha = Mathf.PingPong(Time.time * 8f, 1f); // Titila rápido
+                _dynamicFeedbackText.color = new Color(0f, 1f, 0f, 0.4f + alpha * 0.6f); // Verde titilante
+            }
+            
+            // Animación de pulso
+            _dynamicFeedbackText.transform.localScale = Vector3.one * (1f + Mathf.PingPong(Time.time * 5f, 0.15f));
+        }
     }
 
     private void SetPanelVisible(bool visible)

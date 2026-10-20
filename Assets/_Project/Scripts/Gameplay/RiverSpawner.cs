@@ -6,6 +6,7 @@ public class RiverSpawner : MonoBehaviour
 {
     [Header("Prefabs")]
     [SerializeField] private GameObject _fishPrefab;
+    public GameObject FishPrefab => _fishPrefab;
 
     [Header("Spawn Settings")]
     [SerializeField] private float _minSpawnDelay = 1f;

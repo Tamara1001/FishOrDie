@@ -6,6 +6,7 @@ public class PlayerSpawner : MonoBehaviour
 {
     [Header("Setup")]
     [SerializeField] private GameObject _playerPrefab;
+    public GameObject PlayerPrefab => _playerPrefab;
 
     [Header("Spawn Layout")]
     [Tooltip("Posición Y del muelle donde aparecen los jugadores.")]

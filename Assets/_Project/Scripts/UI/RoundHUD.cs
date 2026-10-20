@@ -8,8 +8,9 @@ public class RoundHUD : MonoBehaviour
     [SerializeField] private TMP_Text _timerLabel;
     [SerializeField] private TMP_Text _roundLabel;
 
-    [Header("Player Slots")]
+    [Header("Prefabs & Layout")]
     [SerializeField] private GameObject _playerSlotPrefab;
+    public GameObject PlayerSlotPrefab => _playerSlotPrefab;
     [SerializeField] private Transform _playersContainer;
 
     [Header("Score Popup")]

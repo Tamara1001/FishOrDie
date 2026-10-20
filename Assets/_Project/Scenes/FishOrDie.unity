@@ -119,11 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &60174419 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5596359155224148985, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-  m_PrefabInstance: {fileID: 1529315333}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &172919413
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -513,11 +508,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &670282001 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5294246696959073176, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-  m_PrefabInstance: {fileID: 1529315333}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1281261793
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -623,50 +613,6 @@ PrefabInstance:
       propertyPath: _playerSpawner
       value: 
       objectReference: {fileID: 462010257}
-    - target: {fileID: 4966814672373364592, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: m_Spacing.x
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 4966814672373364592, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: m_Spacing.y
-      value: 40
-      objectReference: {fileID: 0}
-    - target: {fileID: 4966814672373364592, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: m_CellSize.x
-      value: 240
-      objectReference: {fileID: 0}
-    - target: {fileID: 4966814672373364592, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: m_CellSize.y
-      value: 320
-      objectReference: {fileID: 0}
-    - target: {fileID: 4966814672373364592, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: m_Padding.m_Top
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 4966814672373364592, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: m_ChildAlignment
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 4966814672373364592, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: m_Padding.m_Left
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 4966814672373364592, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: m_Padding.m_Right
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 4966814672373364592, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: m_Padding.m_Bottom
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 5294246696959073176, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5476868487812612139, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 5953470546422941189, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -747,21 +693,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7772093400525307115, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: galeriaPanel
-      value: 
-      objectReference: {fileID: 670282001}
-    - target: {fileID: 7772093400525307115, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: tutorialPanel
-      value: 
-      objectReference: {fileID: 60174419}
     - target: {fileID: 7775746074770006127, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
       propertyPath: m_Name
       value: UI_Canvas
-      objectReference: {fileID: 0}
-    - target: {fileID: 8604455571240250017, guid: 2dbc96132dfd2b34aa88a2392a2ca153, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: OnGaleriaClicked
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -16,7 +16,7 @@ public class PlayerController : MonoBehaviour
     
     public bool IsPulling => _fishAction != null && _fishAction.IsPressed();
 
-    public SkillCheck CurrentSkillCheck { get; private set; }
+    public SkillCheck CurrentSkillCheck { get; internal set; }
 
     [Header("UI & Feedback")]
     [Tooltip("El objeto PADRE que contiene todas las partes visuales del jugador (bote, brazos, cabeza).")]
