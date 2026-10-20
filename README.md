@@ -4,6 +4,8 @@
 
 Party game local de 2 a 6 jugadores en pantalla compartida, hecho en Unity 2D. Es un torneo de pesca en las costas del río Paraná, en Rosario: cada ronda, quien pesca menos es arrastrado al fondo por el Monstruo del Paraná. Queda un solo pescador en pie.
 
+**▶ [Jugar en el navegador (itch.io)](https://tamara1001.itch.io/fishordie)**
+
 Cada jugador usa **una sola tecla**, y esa misma tecla sirve para tirar la caña y para el minijuego de captura.
 
 ## De un vistazo
